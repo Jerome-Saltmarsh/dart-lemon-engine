@@ -1,0 +1,1 @@
+double zoom = 1;

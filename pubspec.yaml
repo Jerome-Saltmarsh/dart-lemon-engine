@@ -1,0 +1,15 @@
+name: lemon_engine
+description: A simple loop and render library
+version: 1.0.0
+# homepage: https://www.example.com
+
+environment:
+  sdk: '>=2.14.3 <3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  universal_html: ^2.0.8
+  positioned_tap_detector_2: ^1.0.4
+
