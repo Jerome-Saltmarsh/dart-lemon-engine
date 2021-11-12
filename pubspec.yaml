@@ -1,6 +1,6 @@
 name: lemon_engine
 description: A simple loop and render library
-version: 0.0.2
+version: 0.1.0
 homepage: https://github.com/Jerome-Saltmarsh/dart-lemon-engine
 
 environment:
@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
 
+  lemon_watch: ^1.0.1
   universal_html: ^2.0.8
   positioned_tap_detector_2: ^1.0.4
 

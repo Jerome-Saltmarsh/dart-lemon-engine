@@ -55,6 +55,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.15.0"
+  lemon_watch:
+    dependency: "direct main"
+    description:
+      name: lemon_watch
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.1"
   meta:
     dependency: transitive
     description:
