@@ -78,6 +78,7 @@ class Game extends StatefulWidget {
   final String title;
   final Function init;
   final Function update;
+  final WidgetBuilder? buildLoadingScreen;
   final WidgetBuilder buildUI;
   final DrawCanvas drawCanvas;
   final DrawCanvas drawCanvasForeground;
@@ -92,6 +93,7 @@ class Game extends StatefulWidget {
       required this.update,
       required this.buildUI,
       required this.drawCanvas,
+      this.buildLoadingScreen,
       this.drawCanvasForeground = _defaultDrawCanvasForeground,
       this.backgroundColor = Colors.black,
       this.drawCanvasAfterUpdate = true,
@@ -180,6 +182,10 @@ class _GameState extends State<Game> {
       home: Scaffold(
         body: WatchBuilder(initialized, (bool? value) {
           if (value != true) {
+            WidgetBuilder? buildLoadingScreen = widget.buildLoadingScreen;
+            if (buildLoadingScreen != null){
+             return buildLoadingScreen(context);
+            }
             return Text("Loading");
           }
           return Builder(
