@@ -1,25 +1,25 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:lemon_engine/state/cursor.dart';
 import 'package:lemon_engine/state/initialized.dart';
 import 'package:lemon_watch/watch_builder.dart';
 import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
+
 import 'classes/vector2.dart';
-import 'functions/screen_to_world.dart';
 import 'functions/disable_right_click_context_menu.dart';
+import 'functions/screen_to_world.dart';
 import 'properties/mouse_world.dart';
 import 'state/build_context.dart';
 import 'state/camera.dart';
 import 'state/canvas.dart';
 import 'state/mouseDragging.dart';
 import 'state/onMouseScroll.dart';
+import 'state/paint.dart';
 import 'state/screen.dart';
-import 'state/size.dart';
 import 'state/zoom.dart';
 import 'typedefs/DrawCanvas.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
-
-import 'state/paint.dart';
 
 // private global variables
 Offset _mousePosition = Offset(0, 0);
@@ -45,13 +45,8 @@ Offset get mouseWorld => Offset(mouseWorldX, mouseWorldY);
 
 Vector2 get mouseWorldV2 => Vector2(mouseWorldX, mouseWorldY);
 
-double get screenCenterX => screenWidth * 0.5;
-
-double get screenCenterY => screenHeight * 0.5;
-
-double get screenWidth => globalSize.width;
-
-double get screenHeight => globalSize.height;
+double get screenCenterX => screen.width * 0.5;
+double get screenCenterY => screen.height * 0.5;
 
 double get screenCenterWorldX => screenToWorldX(screenCenterX);
 
@@ -59,7 +54,7 @@ double get screenCenterWorldY => screenToWorldY(screenCenterY);
 
 Offset get screenCenterWorld => Offset(screenCenterWorldX, screenCenterWorldY);
 
-bool get mouseAvailable => mouseX != null;
+bool get mouseAvailable => true;
 
 bool get mouseClicked => !_clickProcessed;
 
@@ -69,6 +64,12 @@ DateTime _previousUpdateTime = DateTime.now();
 int get millisecondsSinceLastFrame => _millisecondsSinceLastFrame;
 
 StreamController<bool> onRightClickChanged = StreamController.broadcast();
+
+StreamController<bool> onLeftClicked = StreamController.broadcast();
+
+StreamController<bool> onLongLeftClicked = StreamController.broadcast();
+
+StreamController<bool> onPanStarted = StreamController.broadcast();
 
 void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
   // do nothing
@@ -107,9 +108,9 @@ class Game extends StatefulWidget {
     _previousUpdateTime = now;
 
     screen.left = camera.x;
-    screen.right = camera.x + (screenWidth / zoom);
+    screen.right = camera.x + (screen.width / zoom);
     screen.top = camera.y;
-    screen.bottom = camera.y + (screenHeight / zoom);
+    screen.bottom = camera.y + (screen.height / zoom);
     update();
     _clickProcessed = true;
 
@@ -188,10 +189,12 @@ class _GameState extends State<Game> {
             }
             return Text("Loading");
           }
-          return Builder(
-            builder: (context) {
+          return LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
               globalContext = context;
-              globalSize = MediaQuery.of(context).size;
+              screen.width = constraints.maxWidth;
+              screen.height = constraints.maxHeight;
+
               return Stack(
                 children: [
                   _buildBody(context),
@@ -207,64 +210,73 @@ class _GameState extends State<Game> {
   }
 
   Widget _buildBody(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.precise,
-      onHover: (PointerHoverEvent pointerHoverEvent) {
+
+    Widget child = PositionedTapDetector2(
+      onLongPress: (TapPosition position) {
         _previousMousePosition = _mousePosition;
-        _mousePosition = pointerHoverEvent.position;
-        _mouseDelta = pointerHoverEvent.delta;
+        _mousePosition = position.relative ?? Offset(0, 0);
+        onLongLeftClicked.add(true);
       },
-      child: PositionedTapDetector2(
-        onLongPress: (TapPosition position) {
-          _previousMousePosition = _mousePosition;
-          _mousePosition = position.relative ?? Offset(0, 0);
+      onTap: (position) {
+        _clickProcessed = false;
+        onLeftClicked.add(true);
+      },
+      child: Listener(
+        onPointerSignal: (pointerSignalEvent) {
+          if (pointerSignalEvent is PointerScrollEvent) {
+            onMouseScroll(pointerSignalEvent.scrollDelta.dy);
+          }
         },
-        onTap: (position) {
-          _clickProcessed = false;
-        },
-        child: Listener(
-          onPointerSignal: (pointerSignalEvent) {
-            if (pointerSignalEvent is PointerScrollEvent) {
-              onMouseScroll(pointerSignalEvent.scrollDelta.dy);
-            }
-          },
-          child: GestureDetector(
-              onSecondaryTapDown: (_) {
-                _rightClickDown = true;
-                onRightClickChanged.add(true);
-              },
-              onSecondaryTapUp: (_) {
-                onRightClickChanged.add(false);
-                _rightClickDown = false;
-              },
-              onPanStart: (start) {
-                mouseDragging = true;
-                _previousMousePosition = _mousePosition;
-                _mousePosition = start.globalPosition;
-              },
-              onPanEnd: (value) {
-                mouseDragging = false;
-              },
-              onPanUpdate: (DragUpdateDetails value) {
-                _previousMousePosition = _mousePosition;
-                _mousePosition = value.globalPosition;
-              },
-              child: Container(
-                  color: widget.backgroundColor,
-                  width: globalSize.width,
-                  height: globalSize.height,
-                  child: CustomPaint(
-                      painter: _GamePainter(
-                          drawCanvas: widget.drawCanvas, repaint: _frame),
-                      foregroundPainter: _GamePainter(
-                          drawCanvas: widget.drawCanvasForeground,
-                          repaint: _foregroundFrame)))),
-        ),
+        child: GestureDetector(
+            onSecondaryTapDown: (_) {
+              _rightClickDown = true;
+              onRightClickChanged.add(true);
+            },
+            onSecondaryTapUp: (_) {
+              onRightClickChanged.add(false);
+              _rightClickDown = false;
+            },
+            onPanStart: (start) {
+              mouseDragging = true;
+              _previousMousePosition = _mousePosition;
+              _mousePosition = start.globalPosition;
+              onPanStarted.add(true);
+            },
+            onPanEnd: (value) {
+              mouseDragging = false;
+            },
+            onPanUpdate: (DragUpdateDetails value) {
+              _previousMousePosition = _mousePosition;
+              _mousePosition = value.globalPosition;
+            },
+            child: Container(
+                color: widget.backgroundColor,
+                width: screen.width,
+                height: screen.height,
+                child: CustomPaint(
+                    painter: _GamePainter(
+                        drawCanvas: widget.drawCanvas, repaint: _frame),
+                    foregroundPainter: _GamePainter(
+                        drawCanvas: widget.drawCanvasForeground,
+                        repaint: _foregroundFrame)))),
       ),
     );
+
+    return WatchBuilder(cursorType, (CursorType cursorType){
+      return MouseRegion(
+        cursor: mapCursorTypeToSystemMouseCursor(cursorType),
+        onHover: (PointerHoverEvent pointerHoverEvent) {
+          _previousMousePosition = _mousePosition;
+          _mousePosition = pointerHoverEvent.position;
+          _mouseDelta = pointerHoverEvent.delta;
+        },
+        child: child,
+      );
+    });
   }
 
   Widget _buildUI() {
+    // document.onPointerLockChange.lis
     return StatefulBuilder(builder: (context, drawUI) {
       uiSetState = drawUI;
       globalContext = context;
@@ -288,7 +300,6 @@ class _GamePainter extends CustomPainter {
   @override
   void paint(Canvas _canvas, Size _size) {
     globalCanvas = _canvas;
-    globalSize = _size;
     _canvas.scale(zoom, zoom);
     _canvas.translate(-camera.x, -camera.y);
     drawCanvas(_canvas, _size);
