@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lemon_engine/state/cursor.dart';
 import 'package:lemon_engine/state/initialized.dart';
+import 'package:lemon_watch/watch.dart';
 import 'package:lemon_watch/watch_builder.dart';
 import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
 
@@ -27,6 +29,7 @@ Offset _previousMousePosition = Offset(0, 0);
 Offset _mouseDelta = Offset(0, 0);
 bool _clickProcessed = true;
 late StateSetter uiSetState;
+// bool canvasActive =
 
 // global properties
 Offset get mousePosition => _mousePosition;
@@ -65,11 +68,36 @@ int get millisecondsSinceLastFrame => _millisecondsSinceLastFrame;
 
 StreamController<bool> onRightClickChanged = StreamController.broadcast();
 
-StreamController<bool> onLeftClicked = StreamController.broadcast();
+final _KeyboardEvents keyboardEvents = _KeyboardEvents();
 
-StreamController<bool> onLongLeftClicked = StreamController.broadcast();
+class _KeyboardEvents {
+  ValueChanged<RawKeyEvent>? _listener;
 
-StreamController<bool> onPanStarted = StreamController.broadcast();
+  void listen(ValueChanged<RawKeyEvent>? value){
+    if (_listener == value) return;
+    if (_listener != null){
+      RawKeyboard.instance.removeListener(_listener!);
+    }
+    if (value != null){
+      RawKeyboard.instance.addListener(value);
+    }
+    _listener = value;
+  }
+}
+
+final _MouseEvents mouseEvents = _MouseEvents();
+
+class _MouseEvents {
+  Watch<Function?> onLeftClicked = Watch(null);
+  Watch<Function?> onLongLeftClicked = Watch(null);
+  Watch<Function?> onPanStarted = Watch(null);
+}
+
+final _UI ui = _UI();
+
+class _UI {
+  final Watch<Color> backgroundColor = Watch(Colors.white);
+}
 
 void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
   // do nothing
@@ -88,8 +116,8 @@ class Game extends StatefulWidget {
   final int framesPerSecond;
   final ThemeData? themeData;
 
-  Game(
-      {required this.title,
+  Game({
+      required this.title,
       required this.init,
       required this.update,
       required this.buildUI,
@@ -99,14 +127,14 @@ class Game extends StatefulWidget {
       this.backgroundColor = Colors.black,
       this.drawCanvasAfterUpdate = true,
       this.framesPerSecond = 60,
-      this.themeData});
+      this.themeData
+  });
 
   void _internalUpdate() {
     DateTime now = DateTime.now();
     _millisecondsSinceLastFrame =
         now.difference(_previousUpdateTime).inMilliseconds;
     _previousUpdateTime = now;
-
     screen.left = camera.x;
     screen.right = camera.x + (screen.width / zoom);
     screen.top = camera.y;
@@ -127,23 +155,13 @@ void redrawCanvas() {
   _frame.value++;
 }
 
-void rebuildUI() {
-  if (!initialized.value) {
-    print('rebuildUI() aborted because initialization still in progress');
-    return;
-  }
-  uiSetState(_doNothing);
-}
-
-void _doNothing() {}
-
 final _frame = ValueNotifier<int>(0);
 final _foregroundFrame = ValueNotifier<int>(0);
 const int millisecondsPerSecond = 1000;
-
 bool _rightClickDown = false;
-
 bool get rightClickDown => _rightClickDown;
+
+final Watch<WidgetBuilder?> overrideBuilder = Watch(null);
 
 class _GameState extends State<Game> {
   late Timer _updateTimer;
@@ -155,16 +173,15 @@ class _GameState extends State<Game> {
   @override
   void initState() {
     super.initState();
+    print("lemon_engine.init()");
     _internalInit();
   }
 
   Future _internalInit() async {
-    print("Lemon Engine Initializing");
     disableRightClickContextMenu();
     paint.isAntiAlias = false;
     await widget.init();
     initialized(true);
-    print("Lemon Engine Initializing - Finished");
     int millisecondsPerFrame = millisecondsPerSecond ~/ widget.framesPerSecond;
     Duration updateDuration = Duration(milliseconds: millisecondsPerFrame);
     _updateTimer = Timer.periodic(updateDuration, _update);
@@ -173,40 +190,41 @@ class _GameState extends State<Game> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: widget.title,
-      theme: widget.themeData ??
-          ThemeData(
-            primarySwatch: Colors.orange,
-            visualDensity: VisualDensity.adaptivePlatformDensity,
-          ),
-      home: Scaffold(
-        body: WatchBuilder(initialized, (bool? value) {
-          if (value != true) {
-            WidgetBuilder? buildLoadingScreen = widget.buildLoadingScreen;
-            if (buildLoadingScreen != null){
-             return buildLoadingScreen(context);
-            }
-            return Text("Loading");
-          }
-          return LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              globalContext = context;
-              screen.width = constraints.maxWidth;
-              screen.height = constraints.maxHeight;
+    return NullableWatchBuilder<WidgetBuilder?>(overrideBuilder, (WidgetBuilder? builder){
+      if (builder != null){
+        return builder(context);
+      }
 
-              return Stack(
-                children: [
-                  _buildBody(context),
-                  _buildUI(),
-                ],
-              );
-            },
-          );
-        }),
-      ),
-      debugShowCheckedModeBanner: false,
-    );
+      return MaterialApp(
+        title: widget.title,
+        home: Scaffold(
+          body: WatchBuilder(initialized, (bool? value) {
+            if (value != true) {
+              WidgetBuilder? buildLoadingScreen = widget.buildLoadingScreen;
+              if (buildLoadingScreen != null){
+                return buildLoadingScreen(context);
+              }
+              return Text("Loading");
+            }
+            return LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                globalContext = context;
+                screen.width = constraints.maxWidth;
+                screen.height = constraints.maxHeight;
+
+                return Stack(
+                  children: [
+                    _buildBody(context),
+                    _buildUI(),
+                  ],
+                );
+              },
+            );
+          }),
+        ),
+        debugShowCheckedModeBanner: false,
+      );
+    });
   }
 
   Widget _buildBody(BuildContext context) {
@@ -215,11 +233,12 @@ class _GameState extends State<Game> {
       onLongPress: (TapPosition position) {
         _previousMousePosition = _mousePosition;
         _mousePosition = position.relative ?? Offset(0, 0);
-        onLongLeftClicked.add(true);
+        mouseEvents.onLongLeftClicked.value?.call();
+
       },
       onTap: (position) {
         _clickProcessed = false;
-        onLeftClicked.add(true);
+        mouseEvents.onLeftClicked.value?.call();
       },
       child: Listener(
         onPointerSignal: (pointerSignalEvent) {
@@ -240,7 +259,7 @@ class _GameState extends State<Game> {
               mouseDragging = true;
               _previousMousePosition = _mousePosition;
               _mousePosition = start.globalPosition;
-              onPanStarted.add(true);
+              mouseEvents.onPanStarted.value?.call();
             },
             onPanEnd: (value) {
               mouseDragging = false;
@@ -249,16 +268,18 @@ class _GameState extends State<Game> {
               _previousMousePosition = _mousePosition;
               _mousePosition = value.globalPosition;
             },
-            child: Container(
-                color: widget.backgroundColor,
-                width: screen.width,
-                height: screen.height,
-                child: CustomPaint(
-                    painter: _GamePainter(
-                        drawCanvas: widget.drawCanvas, repaint: _frame),
-                    foregroundPainter: _GamePainter(
-                        drawCanvas: widget.drawCanvasForeground,
-                        repaint: _foregroundFrame)))),
+            child: WatchBuilder(ui.backgroundColor, (Color backgroundColor){
+              return Container(
+                  color: widget.backgroundColor,
+                  width: screen.width,
+                  height: screen.height,
+                  child: CustomPaint(
+                      painter: _GamePainter(
+                          drawCanvas: widget.drawCanvas, repaint: _frame),
+                      foregroundPainter: _GamePainter(
+                          drawCanvas: widget.drawCanvasForeground,
+                          repaint: _foregroundFrame)));
+            })),
       ),
     );
 
@@ -276,7 +297,6 @@ class _GameState extends State<Game> {
   }
 
   Widget _buildUI() {
-    // document.onPointerLockChange.lis
     return StatefulBuilder(builder: (context, drawUI) {
       uiSetState = drawUI;
       globalContext = context;
@@ -310,3 +330,4 @@ class _GamePainter extends CustomPainter {
     return true;
   }
 }
+
