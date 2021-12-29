@@ -61,7 +61,7 @@ bool get mouseAvailable => true;
 
 bool get mouseClicked => !_clickProcessed;
 
-int _millisecondsSinceLastFrame = 0;
+int _millisecondsSinceLastFrame = 50;
 DateTime _previousUpdateTime = DateTime.now();
 
 int get millisecondsSinceLastFrame => _millisecondsSinceLastFrame;
@@ -96,7 +96,9 @@ class _MouseEvents {
 final _UI ui = _UI();
 
 class _UI {
+  final Watch<int> fps = Watch(0);
   final Watch<Color> backgroundColor = Watch(Colors.white);
+  bool drawCanvasAfterUpdate = true;
 }
 
 void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
@@ -111,8 +113,6 @@ class Game extends StatefulWidget {
   final WidgetBuilder buildUI;
   final DrawCanvas drawCanvas;
   final DrawCanvas drawCanvasForeground;
-  final Color backgroundColor;
-  final bool drawCanvasAfterUpdate;
   final int framesPerSecond;
   final ThemeData? themeData;
 
@@ -124,16 +124,21 @@ class Game extends StatefulWidget {
       required this.drawCanvas,
       this.buildLoadingScreen,
       this.drawCanvasForeground = _defaultDrawCanvasForeground,
-      this.backgroundColor = Colors.black,
-      this.drawCanvasAfterUpdate = true,
+      Color backgroundColor = Colors.black,
+      bool drawCanvasAfterUpdate = true,
       this.framesPerSecond = 60,
       this.themeData
-  });
+  }){
+    ui.backgroundColor.value = backgroundColor;
+    ui.drawCanvasAfterUpdate = drawCanvasAfterUpdate;
+  }
 
   void _internalUpdate() {
     DateTime now = DateTime.now();
-    _millisecondsSinceLastFrame =
-        now.difference(_previousUpdateTime).inMilliseconds;
+    _millisecondsSinceLastFrame = now.difference(_previousUpdateTime).inMilliseconds;
+    if (_millisecondsSinceLastFrame > 0){
+      ui.fps.value = 1000 ~/ _millisecondsSinceLastFrame;
+    }
     _previousUpdateTime = now;
     screen.left = camera.x;
     screen.right = camera.x + (screen.width / zoom);
@@ -142,7 +147,7 @@ class Game extends StatefulWidget {
     update();
     _clickProcessed = true;
 
-    if (drawCanvasAfterUpdate) {
+    if (ui.drawCanvasAfterUpdate) {
       redrawCanvas();
     }
   }
@@ -162,6 +167,7 @@ bool _rightClickDown = false;
 bool get rightClickDown => _rightClickDown;
 
 final Watch<WidgetBuilder?> overrideBuilder = Watch(null);
+
 
 class _GameState extends State<Game> {
   late Timer _updateTimer;
@@ -270,7 +276,7 @@ class _GameState extends State<Game> {
             },
             child: WatchBuilder(ui.backgroundColor, (Color backgroundColor){
               return Container(
-                  color: widget.backgroundColor,
+                  color: backgroundColor,
                   width: screen.width,
                   height: screen.height,
                   child: CustomPaint(
