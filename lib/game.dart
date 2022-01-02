@@ -8,8 +8,8 @@ import 'package:lemon_engine/state/initialized.dart';
 import 'package:lemon_watch/watch.dart';
 import 'package:lemon_watch/watch_builder.dart';
 import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
+import 'package:universal_html/html.dart';
 
-import 'classes/vector2.dart';
 import 'functions/disable_right_click_context_menu.dart';
 import 'functions/screen_to_world.dart';
 import 'properties/mouse_world.dart';
@@ -45,8 +45,6 @@ double get mouseY => _mousePosition.dy;
 Offset get mouse => Offset(mouseX, mouseY);
 
 Offset get mouseWorld => Offset(mouseWorldX, mouseWorldY);
-
-Vector2 get mouseWorldV2 => Vector2(mouseWorldX, mouseWorldY);
 
 double get screenCenterX => screen.width * 0.5;
 double get screenCenterY => screen.height * 0.5;
@@ -181,6 +179,15 @@ class _GameState extends State<Game> {
     super.initState();
     print("lemon_engine.init()");
     _internalInit();
+
+    document.addEventListener("mousemove", (value){
+      if (value is MouseEvent){
+        _previousMousePosition = _mousePosition;
+        // value.page
+        // _mousePosition = Offset(value.screen.x.toDouble(), value.screen.y.toDouble());
+        _mousePosition = Offset(value.page.x.toDouble(), value.page.y.toDouble());
+      }
+    }, false);
   }
 
   Future _internalInit() async {
@@ -293,8 +300,8 @@ class _GameState extends State<Game> {
       return MouseRegion(
         cursor: mapCursorTypeToSystemMouseCursor(cursorType),
         onHover: (PointerHoverEvent pointerHoverEvent) {
-          _previousMousePosition = _mousePosition;
-          _mousePosition = pointerHoverEvent.position;
+          // _previousMousePosition = _mousePosition;
+          // _mousePosition = pointerHoverEvent.position;
           _mouseDelta = pointerHoverEvent.delta;
         },
         child: child,
