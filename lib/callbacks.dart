@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:lemon_math/Vector2.dart';
 
 class LemonEngineCallbacks {
   Function? onMouseDragging;
@@ -6,5 +6,5 @@ class LemonEngineCallbacks {
   Function? onLongLeftClicked;
   Function? onPanStarted;
   Function(double value)? onMouseScroll;
-  Function(Offset position, Offset previous)? onMouseMoved;
+  Function(Vector2 position, Vector2 previous)? onMouseMoved;
 }

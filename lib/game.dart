@@ -7,45 +7,17 @@ import 'package:lemon_engine/engine.dart';
 import 'package:lemon_watch/watch.dart';
 import 'package:lemon_watch/watch_builder.dart';
 import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
-import 'package:universal_html/html.dart';
 
 import 'enums.dart';
 
-// private global variables
-Offset _mousePosition = Offset(0, 0);
-Offset _previousMousePosition = Offset(0, 0);
 Offset _mouseDelta = Offset(0, 0);
-bool _clickProcessed = true;
-late StateSetter uiSetState;
-// bool canvasActive =
-
-// global properties
-Offset get mousePosition => _mousePosition;
-
-Offset get previousMousePosition => _previousMousePosition;
-
 Offset get mouseVelocity => _mouseDelta;
-
-double get mouseX => _mousePosition.dx;
-
-double get mouseY => _mousePosition.dy;
-
-Offset get mouse => Offset(mouseX, mouseY);
-
 Offset get mouseWorld => Offset(mouseWorldX, mouseWorldY);
-
 double get screenCenterX => engine.state.screen.width * 0.5;
 double get screenCenterY => engine.state.screen.height * 0.5;
-
 double get screenCenterWorldX => screenToWorldX(screenCenterX);
-
 double get screenCenterWorldY => screenToWorldY(screenCenterY);
-
 Offset get screenCenterWorld => Offset(screenCenterWorldX, screenCenterWorldY);
-
-bool get mouseAvailable => true;
-
-bool get mouseClicked => !_clickProcessed;
 
 int _millisecondsSinceLastFrame = 50;
 DateTime _previousUpdateTime = DateTime.now();
@@ -116,6 +88,7 @@ class Game extends StatefulWidget {
   }
 
   void _internalUpdate() {
+    // TODO this should be called inside the engine
     DateTime now = DateTime.now();
     _millisecondsSinceLastFrame = now.difference(_previousUpdateTime).inMilliseconds;
     if (_millisecondsSinceLastFrame > 0){
@@ -127,7 +100,6 @@ class Game extends StatefulWidget {
     engine.state.screen.top = engine.state.camera.y;
     engine.state.screen.bottom = engine.state.camera.y + (engine.state.screen.height / engine.state.zoom);
     update();
-    _clickProcessed = true;
 
     if (ui.drawCanvasAfterUpdate) {
       redrawCanvas();
@@ -148,9 +120,6 @@ const int millisecondsPerSecond = 1000;
 bool _rightClickDown = false;
 bool get rightClickDown => _rightClickDown;
 
-final Watch<WidgetBuilder?> overrideBuilder = Watch(null);
-
-
 class _GameState extends State<Game> {
   late Timer _updateTimer;
 
@@ -163,19 +132,6 @@ class _GameState extends State<Game> {
     super.initState();
     print("lemon_engine.init()");
     _internalInit();
-
-    document.addEventListener("mousemove", (value){
-      if (value is MouseEvent){
-        _previousMousePosition = _mousePosition;
-        // value.page
-        // _mousePosition = Offset(value.screen.x.toDouble(), value.screen.y.toDouble());
-        _mousePosition = Offset(value.page.x.toDouble(), value.page.y.toDouble());
-
-        engine.callbacks.onMouseMoved?.call(
-          _mousePosition, _previousMousePosition
-        );
-      }
-    }, false);
   }
 
   Future _internalInit() async {
@@ -191,42 +147,37 @@ class _GameState extends State<Game> {
 
   @override
   Widget build(BuildContext context) {
-    return NullableWatchBuilder<WidgetBuilder?>(overrideBuilder, (WidgetBuilder? builder){
-      if (builder != null){
-        return builder(context);
-      }
-      return NullableWatchBuilder<ThemeData?>(ui.themeData, (ThemeData? themeData){
-        return MaterialApp(
-          title: widget.title,
-          routes: widget.routes ?? {},
-          theme: themeData,
-          home: Scaffold(
-            body: WatchBuilder(engine.state.initialized, (bool? value) {
-              if (value != true) {
-                WidgetBuilder? buildLoadingScreen = widget.buildLoadingScreen;
-                if (buildLoadingScreen != null){
-                  return buildLoadingScreen(context);
-                }
-                return Text("Loading");
+    return NullableWatchBuilder<ThemeData?>(ui.themeData, (ThemeData? themeData){
+      return MaterialApp(
+        title: widget.title,
+        routes: widget.routes ?? {},
+        theme: themeData,
+        home: Scaffold(
+          body: WatchBuilder(engine.state.initialized, (bool? value) {
+            if (value != true) {
+              WidgetBuilder? buildLoadingScreen = widget.buildLoadingScreen;
+              if (buildLoadingScreen != null){
+                return buildLoadingScreen(context);
               }
-              return LayoutBuilder(
-                builder: (BuildContext context, BoxConstraints constraints) {
-                  engine.state.buildContext = context;
-                  engine.state.screen.width = constraints.maxWidth;
-                  engine.state.screen.height = constraints.maxHeight;
-                  return Stack(
-                    children: [
-                      _buildBody(context),
-                      _buildUI(),
-                    ],
-                  );
-                },
-              );
-            }),
-          ),
-          debugShowCheckedModeBanner: false,
-        );
-      });
+              return Text("Loading");
+            }
+            return LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                engine.state.buildContext = context;
+                engine.state.screen.width = constraints.maxWidth;
+                engine.state.screen.height = constraints.maxHeight;
+                return Stack(
+                  children: [
+                    _buildBody(context),
+                    _buildUI(),
+                  ],
+                );
+              },
+            );
+          }),
+        ),
+        debugShowCheckedModeBanner: false,
+      );
     });
   }
 
@@ -234,13 +185,10 @@ class _GameState extends State<Game> {
 
     Widget child = PositionedTapDetector2(
       onLongPress: (TapPosition position) {
-        _previousMousePosition = _mousePosition;
-        _mousePosition = position.relative ?? Offset(0, 0);
         engine.callbacks.onLongLeftClicked?.call();
 
       },
       onTap: (position) {
-        _clickProcessed = false;
         engine.callbacks.onLeftClicked?.call();
       },
       child: Listener(
@@ -260,16 +208,12 @@ class _GameState extends State<Game> {
             },
             onPanStart: (start) {
               engine.state.mouseDragging = true;
-              _previousMousePosition = _mousePosition;
-              _mousePosition = start.globalPosition;
               engine.callbacks.onPanStarted?.call();
             },
             onPanEnd: (value) {
               engine.state.mouseDragging = false;
             },
             onPanUpdate: (DragUpdateDetails value) {
-              _previousMousePosition = _mousePosition;
-              _mousePosition = value.globalPosition;
               engine.callbacks.onMouseDragging?.call();
             },
             child: WatchBuilder(ui.backgroundColor, (Color backgroundColor){
@@ -297,10 +241,7 @@ class _GameState extends State<Game> {
   }
 
   Widget _buildUI() {
-    return StatefulBuilder(builder: (context, drawUI) {
-      uiSetState = drawUI;
-      return widget.buildUI(context);
-    });
+    return widget.buildUI(context);
   }
 
   @override
