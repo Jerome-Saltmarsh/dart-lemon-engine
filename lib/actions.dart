@@ -34,6 +34,8 @@ class LemonEngineActions {
      engine.callbacks.onPanStarted = null;
      engine.callbacks.onLeftClicked = null;
      engine.callbacks.onLongLeftClicked = null;
+     engine.callbacks.onRightClickDown = null;
+     engine.callbacks.onRightClickUp = null;
   }
 
   void setPaintColorWhite(){

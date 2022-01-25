@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,9 +13,6 @@ double get screenCenterY => engine.state.screen.height * 0.5;
 double get screenCenterWorldX => screenToWorldX(screenCenterX);
 double get screenCenterWorldY => screenToWorldY(screenCenterY);
 Offset get screenCenterWorld => Offset(screenCenterWorldX, screenCenterWorldY);
-
-
-StreamController<bool> onRightClickChanged = StreamController.broadcast();
 
 final _KeyboardEvents keyboardEvents = _KeyboardEvents();
 
@@ -78,8 +73,6 @@ class Game extends StatefulWidget {
 }
 
 const int millisecondsPerSecond = 1000;
-bool _rightClickDown = false;
-bool get rightClickDown => _rightClickDown;
 
 class _GameState extends State<Game> {
 
@@ -137,12 +130,12 @@ class _GameState extends State<Game> {
         },
         child: GestureDetector(
             onSecondaryTapDown: (_) {
-              _rightClickDown = true;
-              onRightClickChanged.add(true);
+              engine.state.rightClickDown.value = true;
+              engine.callbacks.onRightClickDown?.call();
             },
             onSecondaryTapUp: (_) {
-              onRightClickChanged.add(false);
-              _rightClickDown = false;
+              engine.callbacks.onRightClickUp?.call();
+              engine.state.rightClickDown.value = false;
             },
             onPanStart: (start) {
               engine.state.mouseDragging = true;

@@ -7,6 +7,7 @@ import 'package:lemon_watch/watch.dart';
 import 'enums.dart';
 
 class LemonEngineState {
+  final Watch<bool> rightClickDown = Watch(false);
   final Watch<Color> backgroundColor = Watch(Colors.black);
   final Watch<ThemeData?> themeData = Watch(null);
   final canvasFrame = ValueNotifier<int>(0);
