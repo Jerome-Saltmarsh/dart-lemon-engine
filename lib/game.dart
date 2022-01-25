@@ -4,7 +4,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lemon_engine/engine.dart';
-import 'package:lemon_engine/state/initialized.dart';
 import 'package:lemon_watch/watch.dart';
 import 'package:lemon_watch/watch_builder.dart';
 import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
@@ -188,7 +187,7 @@ class _GameState extends State<Game> {
     disableRightClickContextMenu();
     engine.state.paint.isAntiAlias = false;
     await widget.init();
-    initialized(true);
+    engine.state.initialized.value = true;
     int millisecondsPerFrame = millisecondsPerSecond ~/ widget.framesPerSecond;
     Duration updateDuration = Duration(milliseconds: millisecondsPerFrame);
     _updateTimer = Timer.periodic(updateDuration, _update);
@@ -207,7 +206,7 @@ class _GameState extends State<Game> {
           routes: widget.routes ?? {},
           theme: themeData,
           home: Scaffold(
-            body: WatchBuilder(initialized, (bool? value) {
+            body: WatchBuilder(engine.state.initialized, (bool? value) {
               if (value != true) {
                 WidgetBuilder? buildLoadingScreen = widget.buildLoadingScreen;
                 if (buildLoadingScreen != null){

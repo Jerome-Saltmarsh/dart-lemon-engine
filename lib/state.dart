@@ -6,6 +6,7 @@ import 'package:lemon_watch/watch.dart';
 import 'enums.dart';
 
 class LemonEngineState {
+  final initialized = Watch(false);
   final Watch<CursorType> cursorType = Watch(CursorType.Precise);
   late BuildContext buildContext;
   final Watch<bool> mouseLeftDown = Watch(false);
