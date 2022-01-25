@@ -1,9 +1,26 @@
 
 import 'package:flutter/material.dart';
+import 'package:universal_html/html.dart';
 
 import 'engine.dart';
 
 class LemonEngineActions {
+
+  void fullscreenToggle(){
+    fullScreenActive ? fullScreenExit() : fullScreenEnter();
+  }
+
+  void fullScreenExit() {
+    document.exitFullscreen();
+  }
+
+  void fullScreenEnter() {
+    document.documentElement!.requestFullscreen();
+  }
+
+  void disableRightClickContextMenu() {
+    document.onContextMenu.listen((event) => event.preventDefault());
+  }
 
   void clearCallbacks(){
     print("engine.actions.clearCallbacks()");

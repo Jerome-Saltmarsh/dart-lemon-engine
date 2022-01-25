@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lemon_engine/classes.dart';
-import 'package:lemon_engine/typedefs/DrawCanvas.dart';
+import 'package:lemon_engine/engine.dart';
 import 'package:lemon_math/Vector2.dart';
 import 'package:lemon_watch/watch.dart';
 

@@ -10,10 +10,6 @@ import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
 import 'package:universal_html/html.dart';
 
 import 'enums.dart';
-import 'functions/disable_right_click_context_menu.dart';
-import 'functions/screen_to_world.dart';
-import 'properties/mouse_world.dart';
-import 'typedefs/DrawCanvas.dart';
 
 // private global variables
 Offset _mousePosition = Offset(0, 0);
@@ -183,7 +179,7 @@ class _GameState extends State<Game> {
   }
 
   Future _internalInit() async {
-    disableRightClickContextMenu();
+    engine.actions.disableRightClickContextMenu();
     engine.state.paint.isAntiAlias = false;
     await widget.init();
     engine.state.initialized.value = true;
