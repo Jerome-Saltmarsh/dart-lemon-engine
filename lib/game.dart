@@ -39,32 +39,30 @@ void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
 class Game extends StatefulWidget {
   final String title;
   final Map<String, WidgetBuilder>? routes;
-  final Function update;
-  final WidgetBuilder? buildLoadingScreen;
-  final WidgetBuilder buildUI;
   final DrawCanvas drawCanvasForeground;
-  final int framesPerSecond;
 
   Game({
       required this.title,
+      required Function update,
+      WidgetBuilder? buildUI,
       Function? init,
-      required this.update,
-      required this.buildUI,
-      this.buildLoadingScreen,
+      WidgetBuilder? buildLoadingScreen,
       this.routes,
       this.drawCanvasForeground = _defaultDrawCanvasForeground,
       DrawCanvas? drawCanvas,
       Color backgroundColor = Colors.black,
       bool drawCanvasAfterUpdate = true,
-      this.framesPerSecond = 60,
       ThemeData? themeData,
-
   }){
+    engine.state.buildLoadingScreen = buildLoadingScreen;
     engine.state.backgroundColor.value = backgroundColor;
     engine.state.themeData.value = themeData;
     engine.state.drawCanvasAfterUpdate = drawCanvasAfterUpdate;
     engine.state.drawCanvas = drawCanvas;
     engine.state.update = update;
+    if (buildUI != null){
+      engine.state.buildUI = buildUI;
+    }
     engine.init(init);
   }
 
@@ -86,11 +84,11 @@ class _GameState extends State<Game> {
         home: Scaffold(
           body: WatchBuilder(engine.initialized, (bool? value) {
             if (value != true) {
-              WidgetBuilder? buildLoadingScreen = widget.buildLoadingScreen;
+              final buildLoadingScreen = engine.state.buildLoadingScreen;
               if (buildLoadingScreen != null){
                 return buildLoadingScreen(context);
               }
-              return Text("Loading");
+              return Center(child: Text("Loading"));
             }
             return LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
@@ -100,7 +98,7 @@ class _GameState extends State<Game> {
                 return Stack(
                   children: [
                     _buildBody(context),
-                    _buildUI(),
+                    engine.state.buildUI(context),
                   ],
                 );
               },
@@ -169,10 +167,6 @@ class _GameState extends State<Game> {
         child: child,
       );
     });
-  }
-
-  Widget _buildUI() {
-    return widget.buildUI(context);
   }
 
   @override
