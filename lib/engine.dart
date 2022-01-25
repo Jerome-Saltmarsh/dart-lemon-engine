@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:lemon_engine/actions.dart';
 import 'package:lemon_engine/callbacks.dart';
 import 'package:lemon_engine/draw.dart';
-import 'package:lemon_engine/queries.dart';
 import 'package:lemon_engine/state.dart';
 import 'package:universal_html/html.dart';
 
@@ -19,7 +18,6 @@ class _Engine {
   final actions = LemonEngineActions();
   final callbacks = LemonEngineCallbacks();
   final draw = LemonEngineDraw();
-  final queries = LemonEngineQueries();
 }
 
 bool keyPressed(LogicalKeyboardKey key) {
@@ -49,3 +47,10 @@ double get mouseWorldY => screenToWorldY(mouseY);
 bool get fullScreenActive => document.fullscreenElement != null;
 
 typedef DrawCanvas(Canvas canvass, Size size);
+
+bool onScreen(double x, double y) {
+  return x > engine.state.screen.left &&
+      x < engine.state.screen.right &&
+      y > engine.state.screen.top &&
+      y < engine.state.screen.bottom;
+}
