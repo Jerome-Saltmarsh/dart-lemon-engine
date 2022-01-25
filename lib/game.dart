@@ -4,13 +4,13 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lemon_engine/engine.dart';
-import 'package:lemon_engine/state/cursor.dart';
 import 'package:lemon_engine/state/initialized.dart';
 import 'package:lemon_watch/watch.dart';
 import 'package:lemon_watch/watch_builder.dart';
 import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
 import 'package:universal_html/html.dart';
 
+import 'enums.dart';
 import 'functions/disable_right_click_context_menu.dart';
 import 'functions/screen_to_world.dart';
 import 'properties/mouse_world.dart';

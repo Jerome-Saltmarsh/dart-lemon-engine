@@ -1,4 +1,3 @@
-
 import 'package:flutter/services.dart';
 
 enum CursorType {
@@ -8,6 +7,8 @@ enum CursorType {
   Precise,
   Click,
 }
+
+final List<CursorType> cursorTypes = CursorType.values;
 
 SystemMouseCursor mapCursorTypeToSystemMouseCursor(CursorType value){
   switch(value){
@@ -23,4 +24,3 @@ SystemMouseCursor mapCursorTypeToSystemMouseCursor(CursorType value){
       return SystemMouseCursors.basic;
   }
 }
-
