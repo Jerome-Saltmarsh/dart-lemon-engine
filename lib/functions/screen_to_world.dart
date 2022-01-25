@@ -1,10 +1,9 @@
-import 'package:lemon_engine/state/camera.dart';
-import 'package:lemon_engine/state/zoom.dart';
+import 'package:lemon_engine/engine.dart';
 
 double screenToWorldX(double value) {
-  return camera.x + value / zoom;
+  return engine.state.camera.x + value / engine.state.zoom;
 }
 
 double screenToWorldY(double value) {
-  return camera.y + value / zoom;
+  return engine.state.camera.y + value / engine.state.zoom;
 }

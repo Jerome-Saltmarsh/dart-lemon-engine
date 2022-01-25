@@ -14,7 +14,7 @@ packages:
       name: characters
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.1.0"
+    version: "1.2.0"
   charcode:
     dependency: transitive
     description:
@@ -55,6 +55,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.15.0"
+  lemon_math:
+    dependency: "direct main"
+    description:
+      name: lemon_math
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.1.5"
   lemon_watch:
     dependency: "direct main"
     description:
@@ -129,6 +136,6 @@ packages:
       name: vector_math
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.1.0"
+    version: "2.1.1"
 sdks:
   dart: ">=2.14.3 <3.0.0"
