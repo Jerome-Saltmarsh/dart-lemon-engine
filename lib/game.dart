@@ -7,13 +7,6 @@ import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
 
 import 'enums.dart';
 
-Offset get mouseWorld => Offset(mouseWorldX, mouseWorldY);
-double get screenCenterX => engine.state.screen.width * 0.5;
-double get screenCenterY => engine.state.screen.height * 0.5;
-double get screenCenterWorldX => screenToWorldX(screenCenterX);
-double get screenCenterWorldY => screenToWorldY(screenCenterY);
-Offset get screenCenterWorld => Offset(screenCenterWorldX, screenCenterWorldY);
-
 final _KeyboardEvents keyboardEvents = _KeyboardEvents();
 
 class _KeyboardEvents {

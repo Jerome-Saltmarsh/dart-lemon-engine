@@ -132,5 +132,10 @@ double get mouseY => mousePosition.y;
 double get mouseWorldX => screenToWorldX(mouseX);
 double get mouseWorldY => screenToWorldY(mouseY);
 bool get fullScreenActive => document.fullscreenElement != null;
+double get screenCenterX => engine.state.screen.width * 0.5;
+double get screenCenterY => engine.state.screen.height * 0.5;
+double get screenCenterWorldX => screenToWorldX(screenCenterX);
+double get screenCenterWorldY => screenToWorldY(screenCenterY);
+Offset get screenCenterWorld => Offset(screenCenterWorldX, screenCenterWorldY);
 
 typedef DrawCanvas(Canvas canvass, Size size);
