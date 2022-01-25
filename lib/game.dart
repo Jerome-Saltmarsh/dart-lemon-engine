@@ -291,12 +291,10 @@ class _GameState extends State<Game> {
       ),
     );
 
-    return WatchBuilder(cursorType, (CursorType cursorType){
+    return WatchBuilder(engine.state.cursorType, (CursorType cursorType){
       return MouseRegion(
         cursor: mapCursorTypeToSystemMouseCursor(cursorType),
         onHover: (PointerHoverEvent pointerHoverEvent) {
-          // _previousMousePosition = _mousePosition;
-          // _mousePosition = pointerHoverEvent.position;
           _mouseDelta = pointerHoverEvent.delta;
         },
         child: child,

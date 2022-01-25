@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:lemon_engine/state/cursor.dart';
 import 'package:lemon_engine/typedefs/DrawCanvas.dart';
 import 'package:lemon_math/Vector2.dart';
 import 'package:lemon_watch/watch.dart';
 
 class LemonEngineState {
+  final Watch<CursorType> cursorType = Watch(CursorType.Precise);
   late BuildContext buildContext;
   final Watch<bool> mouseLeftDown = Watch(false);
   bool mouseDragging = false;

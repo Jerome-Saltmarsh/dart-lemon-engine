@@ -1,8 +1,5 @@
 
 import 'package:flutter/services.dart';
-import 'package:lemon_watch/watch.dart';
-
-final Watch<CursorType> cursorType = Watch(CursorType.Precise);
 
 enum CursorType {
   None,
