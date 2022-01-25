@@ -13,7 +13,6 @@ import 'enums.dart';
 import 'functions/disable_right_click_context_menu.dart';
 import 'functions/screen_to_world.dart';
 import 'properties/mouse_world.dart';
-import 'state/screen.dart';
 import 'typedefs/DrawCanvas.dart';
 
 // private global variables
@@ -39,8 +38,8 @@ Offset get mouse => Offset(mouseX, mouseY);
 
 Offset get mouseWorld => Offset(mouseWorldX, mouseWorldY);
 
-double get screenCenterX => screen.width * 0.5;
-double get screenCenterY => screen.height * 0.5;
+double get screenCenterX => engine.state.screen.width * 0.5;
+double get screenCenterY => engine.state.screen.height * 0.5;
 
 double get screenCenterWorldX => screenToWorldX(screenCenterX);
 
@@ -127,10 +126,10 @@ class Game extends StatefulWidget {
       ui.fps.value = 1000 ~/ _millisecondsSinceLastFrame;
     }
     _previousUpdateTime = now;
-    screen.left = engine.state.camera.x;
-    screen.right = engine.state.camera.x + (screen.width / engine.state.zoom);
-    screen.top = engine.state.camera.y;
-    screen.bottom = engine.state.camera.y + (screen.height / engine.state.zoom);
+    engine.state.screen.left = engine.state.camera.x;
+    engine.state.screen.right = engine.state.camera.x + (engine.state.screen.width / engine.state.zoom);
+    engine.state.screen.top = engine.state.camera.y;
+    engine.state.screen.bottom = engine.state.camera.y + (engine.state.screen.height / engine.state.zoom);
     update();
     _clickProcessed = true;
 
@@ -217,8 +216,8 @@ class _GameState extends State<Game> {
               return LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints constraints) {
                   engine.state.buildContext = context;
-                  screen.width = constraints.maxWidth;
-                  screen.height = constraints.maxHeight;
+                  engine.state.screen.width = constraints.maxWidth;
+                  engine.state.screen.height = constraints.maxHeight;
                   return Stack(
                     children: [
                       _buildBody(context),
@@ -280,8 +279,8 @@ class _GameState extends State<Game> {
             child: WatchBuilder(ui.backgroundColor, (Color backgroundColor){
               return Container(
                   color: backgroundColor,
-                  width: screen.width,
-                  height: screen.height,
+                  width: engine.state.screen.width,
+                  height: engine.state.screen.height,
                   child: CustomPaint(
                       painter: _GamePainter(repaint: _frame),
                       foregroundPainter: _GamePainter(

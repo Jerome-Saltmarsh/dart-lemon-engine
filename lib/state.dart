@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lemon_engine/classes.dart';
 import 'package:lemon_engine/typedefs/DrawCanvas.dart';
 import 'package:lemon_math/Vector2.dart';
 import 'package:lemon_watch/watch.dart';
@@ -6,6 +7,7 @@ import 'package:lemon_watch/watch.dart';
 import 'enums.dart';
 
 class LemonEngineState {
+  final Screen screen = Screen();
   final initialized = Watch(false);
   final Watch<CursorType> cursorType = Watch(CursorType.Precise);
   late BuildContext buildContext;
