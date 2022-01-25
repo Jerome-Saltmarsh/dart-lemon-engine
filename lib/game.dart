@@ -14,7 +14,6 @@ import 'package:universal_html/html.dart';
 import 'functions/disable_right_click_context_menu.dart';
 import 'functions/screen_to_world.dart';
 import 'properties/mouse_world.dart';
-import 'state/build_context.dart';
 import 'state/screen.dart';
 import 'typedefs/DrawCanvas.dart';
 
@@ -218,7 +217,7 @@ class _GameState extends State<Game> {
               }
               return LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints constraints) {
-                  globalContext = context;
+                  engine.state.buildContext = context;
                   screen.width = constraints.maxWidth;
                   screen.height = constraints.maxHeight;
                   return Stack(
@@ -308,7 +307,6 @@ class _GameState extends State<Game> {
   Widget _buildUI() {
     return StatefulBuilder(builder: (context, drawUI) {
       uiSetState = drawUI;
-      globalContext = context;
       return widget.buildUI(context);
     });
   }

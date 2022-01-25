@@ -4,6 +4,7 @@ import 'package:lemon_math/Vector2.dart';
 import 'package:lemon_watch/watch.dart';
 
 class LemonEngineState {
+  late BuildContext buildContext;
   final Watch<bool> mouseLeftDown = Watch(false);
   bool mouseDragging = false;
   Vector2 camera = Vector2(0, 0);
