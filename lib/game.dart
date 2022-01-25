@@ -4,14 +4,11 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lemon_engine/engine.dart';
-import 'package:lemon_watch/watch.dart';
 import 'package:lemon_watch/watch_builder.dart';
 import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
 
 import 'enums.dart';
 
-Offset _mouseDelta = Offset(0, 0);
-Offset get mouseVelocity => _mouseDelta;
 Offset get mouseWorld => Offset(mouseWorldX, mouseWorldY);
 double get screenCenterX => engine.state.screen.width * 0.5;
 double get screenCenterY => engine.state.screen.height * 0.5;
@@ -19,10 +16,6 @@ double get screenCenterWorldX => screenToWorldX(screenCenterX);
 double get screenCenterWorldY => screenToWorldY(screenCenterY);
 Offset get screenCenterWorld => Offset(screenCenterWorldX, screenCenterWorldY);
 
-int _millisecondsSinceLastFrame = 50;
-DateTime _previousUpdateTime = DateTime.now();
-
-int get millisecondsSinceLastFrame => _millisecondsSinceLastFrame;
 
 StreamController<bool> onRightClickChanged = StreamController.broadcast();
 
@@ -43,14 +36,6 @@ class _KeyboardEvents {
   }
 }
 
-final _UI ui = _UI();
-
-class _UI {
-  final Watch<int> fps = Watch(0);
-  final Watch<Color> backgroundColor = Watch(Colors.white);
-  bool drawCanvasAfterUpdate = true;
-  final Watch<ThemeData?> themeData = Watch(null);
-}
 
 void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
   // do nothing
@@ -59,7 +44,6 @@ void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
 class Game extends StatefulWidget {
   final String title;
   final Map<String, WidgetBuilder>? routes;
-  final Function init;
   final Function update;
   final WidgetBuilder? buildLoadingScreen;
   final WidgetBuilder buildUI;
@@ -68,7 +52,7 @@ class Game extends StatefulWidget {
 
   Game({
       required this.title,
-      required this.init,
+      Function? init,
       required this.update,
       required this.buildUI,
       this.buildLoadingScreen,
@@ -81,79 +65,33 @@ class Game extends StatefulWidget {
       ThemeData? themeData,
 
   }){
-    ui.backgroundColor.value = backgroundColor;
-    ui.drawCanvasAfterUpdate = drawCanvasAfterUpdate;
-    ui.themeData.value = themeData;
+    engine.state.backgroundColor.value = backgroundColor;
+    engine.state.themeData.value = themeData;
+    engine.state.drawCanvasAfterUpdate = drawCanvasAfterUpdate;
     engine.state.drawCanvas = drawCanvas;
-  }
-
-  void _internalUpdate() {
-    // TODO this should be called inside the engine
-    DateTime now = DateTime.now();
-    _millisecondsSinceLastFrame = now.difference(_previousUpdateTime).inMilliseconds;
-    if (_millisecondsSinceLastFrame > 0){
-      ui.fps.value = 1000 ~/ _millisecondsSinceLastFrame;
-    }
-    _previousUpdateTime = now;
-    engine.state.screen.left = engine.state.camera.x;
-    engine.state.screen.right = engine.state.camera.x + (engine.state.screen.width / engine.state.zoom);
-    engine.state.screen.top = engine.state.camera.y;
-    engine.state.screen.bottom = engine.state.camera.y + (engine.state.screen.height / engine.state.zoom);
-    update();
-
-    if (ui.drawCanvasAfterUpdate) {
-      redrawCanvas();
-    }
+    engine.state.update = update;
+    engine.init(init);
   }
 
   @override
   _GameState createState() => _GameState();
 }
 
-void redrawCanvas() {
-  _frame.value++;
-}
-
-final _frame = ValueNotifier<int>(0);
-final _foregroundFrame = ValueNotifier<int>(0);
 const int millisecondsPerSecond = 1000;
 bool _rightClickDown = false;
 bool get rightClickDown => _rightClickDown;
 
 class _GameState extends State<Game> {
-  late Timer _updateTimer;
-
-  void _update(Timer timer) {
-    widget._internalUpdate();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    print("lemon_engine.init()");
-    _internalInit();
-  }
-
-  Future _internalInit() async {
-    engine.actions.disableRightClickContextMenu();
-    engine.state.paint.isAntiAlias = false;
-    await widget.init();
-    engine.state.initialized.value = true;
-    int millisecondsPerFrame = millisecondsPerSecond ~/ widget.framesPerSecond;
-    Duration updateDuration = Duration(milliseconds: millisecondsPerFrame);
-    _updateTimer = Timer.periodic(updateDuration, _update);
-    print("Lemon Engine - Update Job Started");
-  }
 
   @override
   Widget build(BuildContext context) {
-    return NullableWatchBuilder<ThemeData?>(ui.themeData, (ThemeData? themeData){
+    return NullableWatchBuilder<ThemeData?>(engine.state.themeData, (ThemeData? themeData){
       return MaterialApp(
         title: widget.title,
         routes: widget.routes ?? {},
         theme: themeData,
         home: Scaffold(
-          body: WatchBuilder(engine.state.initialized, (bool? value) {
+          body: WatchBuilder(engine.initialized, (bool? value) {
             if (value != true) {
               WidgetBuilder? buildLoadingScreen = widget.buildLoadingScreen;
               if (buildLoadingScreen != null){
@@ -216,15 +154,15 @@ class _GameState extends State<Game> {
             onPanUpdate: (DragUpdateDetails value) {
               engine.callbacks.onMouseDragging?.call();
             },
-            child: WatchBuilder(ui.backgroundColor, (Color backgroundColor){
+            child: WatchBuilder(engine.state.backgroundColor, (Color backgroundColor){
               return Container(
                   color: backgroundColor,
                   width: engine.state.screen.width,
                   height: engine.state.screen.height,
                   child: CustomPaint(
-                      painter: _GamePainter(repaint: _frame),
+                      painter: _GamePainter(repaint: engine.state.canvasFrame),
                       foregroundPainter: _GamePainter(
-                          repaint: _foregroundFrame)));
+                          repaint: engine.state.foregroundCanvasFrame)));
             })),
       ),
     );
@@ -232,9 +170,9 @@ class _GameState extends State<Game> {
     return WatchBuilder(engine.state.cursorType, (CursorType cursorType){
       return MouseRegion(
         cursor: mapCursorTypeToSystemMouseCursor(cursorType),
-        onHover: (PointerHoverEvent pointerHoverEvent) {
-          _mouseDelta = pointerHoverEvent.delta;
-        },
+        // onHover: (PointerHoverEvent pointerHoverEvent) {
+        //   _mouseDelta = pointerHoverEvent.delta;
+        // },
         child: child,
       );
     });
@@ -247,7 +185,7 @@ class _GameState extends State<Game> {
   @override
   void dispose() {
     super.dispose();
-    _updateTimer.cancel();
+    engine.dispose();
   }
 }
 

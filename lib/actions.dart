@@ -6,6 +6,10 @@ import 'engine.dart';
 
 class LemonEngineActions {
 
+  void redrawCanvas() {
+    engine.state.canvasFrame.value++;
+  }
+
   void fullscreenToggle(){
     fullScreenActive ? fullScreenExit() : fullScreenEnter();
   }

@@ -9,16 +9,11 @@ import 'package:lemon_engine/draw.dart';
 import 'package:lemon_engine/queries.dart';
 import 'package:lemon_engine/state.dart';
 import 'package:lemon_math/Vector2.dart';
+import 'package:lemon_watch/watch.dart';
 import 'package:universal_html/html.dart';
 
 
 final _Engine engine = _Engine();
-
-
-class _InternalState {
-  final Vector2 mousePosition = Vector2(0, 0);
-  final Vector2 previousMousePosition = Vector2(0, 0);
-}
 
 class _Engine {
   final state = LemonEngineState();
@@ -29,7 +24,50 @@ class _Engine {
   final _internalState = _InternalState();
 
   _Engine(){
+    print("LemonEngine()");
     _registerMouseMoveListener();
+    _init();
+  }
+
+  void init(Function? value) async {
+    if (value != null){
+      await value();
+    }
+    _internalState.initialized.value = true;
+  }
+
+  _init() async {
+    final updateDuration = Duration(milliseconds: 1000 ~/ 60);
+    _internalState.updateTimer = Timer.periodic(updateDuration, _internalUpdate);
+    actions.disableRightClickContextMenu();
+    state.paint.isAntiAlias = false;
+  }
+
+  void dispose(){
+    print("engine.dispose()");
+    _internalState.updateTimer.cancel();
+  }
+
+  Watch<bool> get initialized => _internalState.initialized;
+
+  void _internalUpdate(Timer timer) {
+    final now = DateTime.now();
+    _internalState.millisecondsSinceLastFrame = now.difference(_internalState.previousUpdateTime).inMilliseconds;
+    if (_internalState.millisecondsSinceLastFrame > 0){
+      state.fps.value = 1000 ~/ _internalState.millisecondsSinceLastFrame;
+    } else {
+      state.fps.value = 0;
+    }
+    _internalState.previousUpdateTime = now;
+    state.screen.left = state.camera.x;
+    state.screen.right = state.camera.x + (state.screen.width / state.zoom);
+    state.screen.top = state.camera.y;
+    state.screen.bottom = state.camera.y + (state.screen.height / state.zoom);
+    state.update?.call();
+
+    if (state.drawCanvasAfterUpdate) {
+       actions.redrawCanvas();
+    }
   }
 
   void _registerMouseMoveListener() {
@@ -51,6 +89,17 @@ class _Engine {
      );
   }
 }
+
+class _InternalState {
+  final Vector2 mousePosition = Vector2(0, 0);
+  final Vector2 previousMousePosition = Vector2(0, 0);
+  DateTime previousUpdateTime = DateTime.now();
+  int millisecondsSinceLastFrame = 50;
+  late Timer updateTimer;
+  final Watch<bool> initialized = Watch(false);
+}
+
+// Global Properties
 
 bool keyPressed(LogicalKeyboardKey key) {
   return RawKeyboard.instance.keysPressed.contains(key);

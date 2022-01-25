@@ -7,8 +7,14 @@ import 'package:lemon_watch/watch.dart';
 import 'enums.dart';
 
 class LemonEngineState {
+  final Watch<Color> backgroundColor = Watch(Colors.black);
+  final Watch<ThemeData?> themeData = Watch(null);
+  final canvasFrame = ValueNotifier<int>(0);
+  final foregroundCanvasFrame = ValueNotifier<int>(0);
+  bool drawCanvasAfterUpdate = true;
+  Function? update;
+  final Watch<int> fps = Watch(0);
   final Screen screen = Screen();
-  final initialized = Watch(false);
   final Watch<CursorType> cursorType = Watch(CursorType.Precise);
   late BuildContext buildContext;
   final Watch<bool> mouseLeftDown = Watch(false);
