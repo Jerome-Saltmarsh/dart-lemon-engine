@@ -9,8 +9,6 @@ import 'package:lemon_engine/draw.dart';
 import 'package:lemon_engine/state.dart';
 import 'package:universal_html/html.dart';
 
-import 'game.dart';
-
 final _Engine engine = _Engine();
 
 class _Engine {
@@ -20,6 +18,7 @@ class _Engine {
   final draw = LemonEngineDraw();
 }
 
+// global utilities
 bool keyPressed(LogicalKeyboardKey key) {
   return RawKeyboard.instance.keysPressed.contains(key);
 }
@@ -31,12 +30,6 @@ double screenToWorldX(double value) {
 double screenToWorldY(double value) {
   return engine.state.camera.y + value / engine.state.zoom;
 }
-
-double get mouseWorldX => screenToWorldX(mouseX);
-double get mouseWorldY => screenToWorldY(mouseY);
-bool get fullScreenActive => document.fullscreenElement != null;
-
-typedef DrawCanvas(Canvas canvass, Size size);
 
 bool onScreen(double x, double y) {
   return x > engine.state.screen.left &&
@@ -55,5 +48,24 @@ Future<Image> loadImage(String url) async {
   return completer.future;
 }
 
-
+// global constants
 const int millisecondsPerSecond = 1000;
+
+// global properties
+Offset get mousePosition => engine.state.mousePosition;
+Offset get previousMousePosition => engine.state.previousMousePosition;
+double get mouseX => engine.state.mousePosition.dx;
+double get mouseY => engine.state.mousePosition.dy;
+Offset get mouse => Offset(mouseX, mouseY);
+Offset get mouseWorld => Offset(mouseWorldX, mouseWorldY);
+double get screenCenterX => engine.state.screen.width * 0.5;
+double get screenCenterY => engine.state.screen.height * 0.5;
+double get screenCenterWorldX => screenToWorldX(screenCenterX);
+double get screenCenterWorldY => screenToWorldY(screenCenterY);
+Offset get screenCenterWorld => Offset(screenCenterWorldX, screenCenterWorldY);
+double get mouseWorldX => screenToWorldX(mouseX);
+double get mouseWorldY => screenToWorldY(mouseY);
+bool get fullScreenActive => document.fullscreenElement != null;
+
+// global typedefs
+typedef DrawCanvas(Canvas canvass, Size size);

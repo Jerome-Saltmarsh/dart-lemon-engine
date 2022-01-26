@@ -10,28 +10,6 @@ import 'package:universal_html/html.dart';
 
 import 'enums.dart';
 
-// global properties
-Offset get mousePosition => engine.state.mousePosition;
-
-Offset get previousMousePosition => engine.state.previousMousePosition;
-
-double get mouseX => engine.state.mousePosition.dx;
-
-double get mouseY => engine.state.mousePosition.dy;
-
-Offset get mouse => Offset(mouseX, mouseY);
-
-Offset get mouseWorld => Offset(mouseWorldX, mouseWorldY);
-
-double get screenCenterX => engine.state.screen.width * 0.5;
-double get screenCenterY => engine.state.screen.height * 0.5;
-
-double get screenCenterWorldX => screenToWorldX(screenCenterX);
-
-double get screenCenterWorldY => screenToWorldY(screenCenterY);
-
-Offset get screenCenterWorld => Offset(screenCenterWorldX, screenCenterWorldY);
-
 final _KeyboardEvents keyboardEvents = _KeyboardEvents();
 
 class _KeyboardEvents {
