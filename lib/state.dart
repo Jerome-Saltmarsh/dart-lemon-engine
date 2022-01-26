@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lemon_engine/classes.dart';
 import 'package:lemon_engine/engine.dart';
 import 'package:lemon_math/Vector2.dart';
 import 'package:lemon_watch/watch.dart';
@@ -16,7 +15,7 @@ class LemonEngineState {
   int millisecondsSinceLastFrame = 50;
   bool drawCanvasAfterUpdate = true;
   final drawFrame = ValueNotifier<int>(0);
-  final Screen screen = Screen();
+  final _Screen screen = _Screen();
   final initialized = Watch(false);
   final Watch<CursorType> cursorType = Watch(CursorType.Precise);
   late BuildContext buildContext;
@@ -36,4 +35,18 @@ class LemonEngineState {
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr
   );
+}
+
+// classes
+class _Screen {
+  double width = 0;
+  double height = 0;
+  /// Refers to the world position of the top side of the screen
+  double top = 0;
+  /// Refers to the world position of the right side of the screen
+  double right = 0;
+  /// Refers to the world position of the bottom side of the screen
+  double bottom = 0;
+  /// Refers to the world position of the left side of the screen
+  double left = 0;
 }

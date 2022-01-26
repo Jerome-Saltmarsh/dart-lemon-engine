@@ -1,3 +1,5 @@
+library lemon_engine;
+
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -8,6 +10,8 @@ import 'package:lemon_engine/callbacks.dart';
 import 'package:lemon_engine/draw.dart';
 import 'package:lemon_engine/state.dart';
 import 'package:universal_html/html.dart';
+
+
 
 final _Engine engine = _Engine();
 
