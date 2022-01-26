@@ -36,8 +36,6 @@ double get screenCenterWorldY => screenToWorldY(screenCenterY);
 
 Offset get screenCenterWorld => Offset(screenCenterWorldX, screenCenterWorldY);
 
-DateTime _previousUpdateTime = DateTime.now();
-
 int get millisecondsSinceLastFrame => engine.state.millisecondsSinceLastFrame;
 
 StreamController<bool> onRightClickChanged = StreamController.broadcast();
@@ -96,11 +94,11 @@ class Game extends StatefulWidget {
 
   void _internalUpdate() {
     DateTime now = DateTime.now();
-    engine.state.millisecondsSinceLastFrame = now.difference(_previousUpdateTime).inMilliseconds;
+    engine.state.millisecondsSinceLastFrame = now.difference(engine.state.previousUpdateTime).inMilliseconds;
     if (engine.state.millisecondsSinceLastFrame > 0){
       engine.state.fps.value = millisecondsPerSecond ~/ engine.state.millisecondsSinceLastFrame;
     }
-    _previousUpdateTime = now;
+    engine.state.previousUpdateTime = now;
     engine.state.screen.left = engine.state.camera.x;
     engine.state.screen.right = engine.state.camera.x + (engine.state.screen.width / engine.state.zoom);
     engine.state.screen.top = engine.state.camera.y;
