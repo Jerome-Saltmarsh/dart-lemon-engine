@@ -10,18 +10,14 @@ import 'package:universal_html/html.dart';
 
 import 'enums.dart';
 
-// private global variables
-Offset _mousePosition = Offset(0, 0);
-Offset _previousMousePosition = Offset(0, 0);
-
 // global properties
-Offset get mousePosition => _mousePosition;
+Offset get mousePosition => engine.state.mousePosition;
 
-Offset get previousMousePosition => _previousMousePosition;
+Offset get previousMousePosition => engine.state.previousMousePosition;
 
-double get mouseX => _mousePosition.dx;
+double get mouseX => engine.state.mousePosition.dx;
 
-double get mouseY => _mousePosition.dy;
+double get mouseY => engine.state.mousePosition.dy;
 
 Offset get mouse => Offset(mouseX, mouseY);
 
@@ -35,8 +31,6 @@ double get screenCenterWorldX => screenToWorldX(screenCenterX);
 double get screenCenterWorldY => screenToWorldY(screenCenterY);
 
 Offset get screenCenterWorld => Offset(screenCenterWorldX, screenCenterWorldY);
-
-int get millisecondsSinceLastFrame => engine.state.millisecondsSinceLastFrame;
 
 StreamController<bool> onRightClickChanged = StreamController.broadcast();
 
@@ -133,10 +127,10 @@ class _GameState extends State<Game> {
 
     document.addEventListener("mousemove", (value){
       if (value is MouseEvent){
-        _previousMousePosition = _mousePosition;
-        _mousePosition = Offset(value.page.x.toDouble(), value.page.y.toDouble());
+        engine.state.previousMousePosition = engine.state.mousePosition;
+        engine.state.mousePosition = Offset(value.page.x.toDouble(), value.page.y.toDouble());
         engine.callbacks.onMouseMoved?.call(
-          _mousePosition, _previousMousePosition
+            engine.state.mousePosition, engine.state.previousMousePosition
         );
       }
     }, false);

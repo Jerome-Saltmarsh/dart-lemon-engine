@@ -7,6 +7,8 @@ import 'package:lemon_watch/watch.dart';
 import 'enums.dart';
 
 class LemonEngineState {
+  Offset mousePosition = Offset(0, 0);
+  Offset previousMousePosition = Offset(0, 0);
   DateTime previousUpdateTime = DateTime.now();
   final Watch<int> fps = Watch(0);
   final Watch<Color> backgroundColor = Watch(Colors.white);
