@@ -6,5 +6,7 @@ class LemonEngineCallbacks {
   Function? onLongLeftClicked;
   Function? onPanStarted;
   Function(double value)? onMouseScroll;
+  Function? onRightClicked;
+  Function? onRightClickReleased;
   Function(Offset position, Offset previous)? onMouseMoved;
 }

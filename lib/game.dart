@@ -32,8 +32,6 @@ double get screenCenterWorldY => screenToWorldY(screenCenterY);
 
 Offset get screenCenterWorld => Offset(screenCenterWorldX, screenCenterWorldY);
 
-StreamController<bool> onRightClickChanged = StreamController.broadcast();
-
 final _KeyboardEvents keyboardEvents = _KeyboardEvents();
 
 class _KeyboardEvents {
@@ -201,10 +199,10 @@ class _GameState extends State<Game> {
         },
         child: GestureDetector(
             onSecondaryTapDown: (_) {
-              onRightClickChanged.add(true);
+              engine.callbacks.onRightClicked?.call();
             },
             onSecondaryTapUp: (_) {
-              onRightClickChanged.add(false);
+              engine.callbacks.onRightClickReleased?.call();
             },
             onPanStart: (start) {
               engine.state.mouseDragging = true;
