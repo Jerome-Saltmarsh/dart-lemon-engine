@@ -14,7 +14,6 @@ import 'enums.dart';
 // private global variables
 Offset _mousePosition = Offset(0, 0);
 Offset _previousMousePosition = Offset(0, 0);
-bool _clickProcessed = true;
 late StateSetter uiSetState;
 // bool canvasActive =
 
@@ -41,8 +40,6 @@ double get screenCenterWorldY => screenToWorldY(screenCenterY);
 Offset get screenCenterWorld => Offset(screenCenterWorldX, screenCenterWorldY);
 
 bool get mouseAvailable => true;
-
-bool get mouseClicked => !_clickProcessed;
 
 int _millisecondsSinceLastFrame = 50;
 DateTime _previousUpdateTime = DateTime.now();
@@ -123,7 +120,6 @@ class Game extends StatefulWidget {
     engine.state.screen.top = engine.state.camera.y;
     engine.state.screen.bottom = engine.state.camera.y + (engine.state.screen.height / engine.state.zoom);
     update();
-    _clickProcessed = true;
 
     if (engine.state.drawCanvasAfterUpdate) {
       engine.actions.redrawCanvas();
@@ -217,7 +213,6 @@ class _GameState extends State<Game> {
 
       },
       onTap: (position) {
-        _clickProcessed = false;
         engine.callbacks.onLeftClicked?.call();
       },
       child: Listener(
