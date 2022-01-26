@@ -127,16 +127,13 @@ class Game extends StatefulWidget {
     _clickProcessed = true;
 
     if (ui.drawCanvasAfterUpdate) {
-      redrawCanvas();
+      engine.actions.redrawCanvas();
+
     }
   }
 
   @override
   _GameState createState() => _GameState();
-}
-
-void redrawCanvas() {
-  engine.state.drawFrame.value++;
 }
 
 final _foregroundFrame = ValueNotifier<int>(0);
