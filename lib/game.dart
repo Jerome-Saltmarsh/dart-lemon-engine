@@ -73,7 +73,6 @@ final _UI ui = _UI();
 class _UI {
   final Watch<int> fps = Watch(0);
   final Watch<Color> backgroundColor = Watch(Colors.white);
-  bool drawCanvasAfterUpdate = true;
   final Watch<ThemeData?> themeData = Watch(null);
 }
 
@@ -107,7 +106,7 @@ class Game extends StatefulWidget {
 
   }){
     ui.backgroundColor.value = backgroundColor;
-    ui.drawCanvasAfterUpdate = drawCanvasAfterUpdate;
+    engine.state.drawCanvasAfterUpdate = drawCanvasAfterUpdate;
     ui.themeData.value = themeData;
     engine.state.drawCanvas = drawCanvas;
   }
@@ -126,9 +125,8 @@ class Game extends StatefulWidget {
     update();
     _clickProcessed = true;
 
-    if (ui.drawCanvasAfterUpdate) {
+    if (engine.state.drawCanvasAfterUpdate) {
       engine.actions.redrawCanvas();
-
     }
   }
 

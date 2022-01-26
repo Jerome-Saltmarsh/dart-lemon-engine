@@ -7,6 +7,7 @@ import 'package:lemon_watch/watch.dart';
 import 'enums.dart';
 
 class LemonEngineState {
+  bool drawCanvasAfterUpdate = true;
   final drawFrame = ValueNotifier<int>(0);
   final Screen screen = Screen();
   final initialized = Watch(false);
