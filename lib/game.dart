@@ -164,10 +164,7 @@ class _GameState extends State<Game> {
     document.addEventListener("mousemove", (value){
       if (value is MouseEvent){
         _previousMousePosition = _mousePosition;
-        // value.page
-        // _mousePosition = Offset(value.screen.x.toDouble(), value.screen.y.toDouble());
         _mousePosition = Offset(value.page.x.toDouble(), value.page.y.toDouble());
-
         engine.callbacks.onMouseMoved?.call(
           _mousePosition, _previousMousePosition
         );
@@ -231,8 +228,6 @@ class _GameState extends State<Game> {
 
     Widget child = PositionedTapDetector2(
       onLongPress: (TapPosition position) {
-        _previousMousePosition = _mousePosition;
-        _mousePosition = position.relative ?? Offset(0, 0);
         engine.callbacks.onLongLeftClicked?.call();
 
       },
@@ -257,16 +252,12 @@ class _GameState extends State<Game> {
             },
             onPanStart: (start) {
               engine.state.mouseDragging = true;
-              _previousMousePosition = _mousePosition;
-              _mousePosition = start.globalPosition;
               engine.callbacks.onPanStarted?.call();
             },
             onPanEnd: (value) {
               engine.state.mouseDragging = false;
             },
             onPanUpdate: (DragUpdateDetails value) {
-              _previousMousePosition = _mousePosition;
-              _mousePosition = value.globalPosition;
               engine.callbacks.onMouseDragging?.call();
             },
             child: WatchBuilder(ui.backgroundColor, (Color backgroundColor){
