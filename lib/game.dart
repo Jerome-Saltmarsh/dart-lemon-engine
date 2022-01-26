@@ -136,10 +136,9 @@ class Game extends StatefulWidget {
 }
 
 void redrawCanvas() {
-  _frame.value++;
+  engine.state.drawFrame.value++;
 }
 
-final _frame = ValueNotifier<int>(0);
 final _foregroundFrame = ValueNotifier<int>(0);
 const int millisecondsPerSecond = 1000;
 
@@ -255,7 +254,7 @@ class _GameState extends State<Game> {
                   width: engine.state.screen.width,
                   height: engine.state.screen.height,
                   child: CustomPaint(
-                      painter: _GamePainter(repaint: _frame),
+                      painter: _GamePainter(repaint: engine.state.drawFrame),
                       foregroundPainter: _GamePainter(
                           repaint: _foregroundFrame)));
             })),
