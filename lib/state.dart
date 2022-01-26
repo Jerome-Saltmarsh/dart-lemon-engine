@@ -7,6 +7,7 @@ import 'package:lemon_watch/watch.dart';
 import 'enums.dart';
 
 class LemonEngineState {
+  final Watch<int> fps = Watch(0);
   final Watch<Color> backgroundColor = Watch(Colors.white);
   final Watch<ThemeData?> themeData = Watch(null);
   int millisecondsSinceLastFrame = 50;

@@ -54,3 +54,6 @@ Future<Image> loadImage(String url) async {
   });
   return completer.future;
 }
+
+
+const int millisecondsPerSecond = 1000;

@@ -4,7 +4,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lemon_engine/engine.dart';
-import 'package:lemon_watch/watch.dart';
 import 'package:lemon_watch/watch_builder.dart';
 import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
 import 'package:universal_html/html.dart';
@@ -14,8 +13,6 @@ import 'enums.dart';
 // private global variables
 Offset _mousePosition = Offset(0, 0);
 Offset _previousMousePosition = Offset(0, 0);
-late StateSetter uiSetState;
-// bool canvasActive =
 
 // global properties
 Offset get mousePosition => _mousePosition;
@@ -39,8 +36,6 @@ double get screenCenterWorldY => screenToWorldY(screenCenterY);
 
 Offset get screenCenterWorld => Offset(screenCenterWorldX, screenCenterWorldY);
 
-bool get mouseAvailable => true;
-
 DateTime _previousUpdateTime = DateTime.now();
 
 int get millisecondsSinceLastFrame => engine.state.millisecondsSinceLastFrame;
@@ -62,12 +57,6 @@ class _KeyboardEvents {
     }
     _listener = value;
   }
-}
-
-final _UI ui = _UI();
-
-class _UI {
-  final Watch<int> fps = Watch(0);
 }
 
 void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
@@ -109,7 +98,7 @@ class Game extends StatefulWidget {
     DateTime now = DateTime.now();
     engine.state.millisecondsSinceLastFrame = now.difference(_previousUpdateTime).inMilliseconds;
     if (engine.state.millisecondsSinceLastFrame > 0){
-      ui.fps.value = 1000 ~/ engine.state.millisecondsSinceLastFrame;
+      engine.state.fps.value = millisecondsPerSecond ~/ engine.state.millisecondsSinceLastFrame;
     }
     _previousUpdateTime = now;
     engine.state.screen.left = engine.state.camera.x;
@@ -128,7 +117,7 @@ class Game extends StatefulWidget {
 }
 
 final _foregroundFrame = ValueNotifier<int>(0);
-const int millisecondsPerSecond = 1000;
+
 
 
 class _GameState extends State<Game> {
@@ -189,8 +178,8 @@ class _GameState extends State<Game> {
                 engine.state.screen.height = constraints.maxHeight;
                 return Stack(
                   children: [
-                    _buildBody(context),
-                    _buildUI(),
+                    _buildCanvas(context),
+                    widget.buildUI(context),
                   ],
                 );
               },
@@ -202,7 +191,7 @@ class _GameState extends State<Game> {
     });
   }
 
-  Widget _buildBody(BuildContext context) {
+  Widget _buildCanvas(BuildContext context) {
 
     Widget child = PositionedTapDetector2(
       onLongPress: (TapPosition position) {
@@ -253,13 +242,6 @@ class _GameState extends State<Game> {
         cursor: mapCursorTypeToSystemMouseCursor(cursorType),
         child: child,
       );
-    });
-  }
-
-  Widget _buildUI() {
-    return StatefulBuilder(builder: (context, drawUI) {
-      uiSetState = drawUI;
-      return widget.buildUI(context);
     });
   }
 
