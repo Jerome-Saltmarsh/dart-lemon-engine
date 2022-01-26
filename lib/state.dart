@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lemon_engine/engine.dart';
 import 'package:lemon_math/Vector2.dart';
 import 'package:lemon_watch/watch.dart';
@@ -6,6 +7,7 @@ import 'package:lemon_watch/watch.dart';
 import 'enums.dart';
 
 class LemonEngineState {
+  final Map<LogicalKeyboardKey, int> keyboardState = {};
   Offset mousePosition = Offset(0, 0);
   Offset previousMousePosition = Offset(0, 0);
   DateTime previousUpdateTime = DateTime.now();

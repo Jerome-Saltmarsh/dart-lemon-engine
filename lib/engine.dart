@@ -8,10 +8,9 @@ import 'package:flutter/services.dart';
 import 'package:lemon_engine/actions.dart';
 import 'package:lemon_engine/callbacks.dart';
 import 'package:lemon_engine/draw.dart';
+import 'package:lemon_engine/events.dart';
 import 'package:lemon_engine/state.dart';
 import 'package:universal_html/html.dart';
-
-
 
 final _Engine engine = _Engine();
 
@@ -20,6 +19,11 @@ class _Engine {
   final actions = LemonEngineActions();
   final callbacks = LemonEngineCallbacks();
   final draw = LemonEngineDraw();
+  final events = LemonEngineEvents();
+
+  _Engine(){
+    RawKeyboard.instance.addListener(events.onKeyboardEvent);
+  }
 }
 
 // global utilities
@@ -73,3 +77,10 @@ bool get fullScreenActive => document.fullscreenElement != null;
 
 // global typedefs
 typedef DrawCanvas(Canvas canvass, Size size);
+
+// classes
+abstract class KeyboardEventHandler {
+  void onPressed(PhysicalKeyboardKey key);
+  void onReleased(PhysicalKeyboardKey key);
+  void onHeld(PhysicalKeyboardKey key, int frames);
+}

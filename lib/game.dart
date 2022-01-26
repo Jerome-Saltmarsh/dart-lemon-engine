@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lemon_engine/engine.dart';
 import 'package:lemon_watch/watch_builder.dart';
 import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
@@ -10,22 +9,23 @@ import 'package:universal_html/html.dart';
 
 import 'enums.dart';
 
-final _KeyboardEvents keyboardEvents = _KeyboardEvents();
 
-class _KeyboardEvents {
-  ValueChanged<RawKeyEvent>? _listener;
+// final _KeyboardEvents keyboardEvents = _KeyboardEvents();
 
-  void listen(ValueChanged<RawKeyEvent>? value){
-    if (_listener == value) return;
-    if (_listener != null){
-      RawKeyboard.instance.removeListener(_listener!);
-    }
-    if (value != null){
-      RawKeyboard.instance.addListener(value);
-    }
-    _listener = value;
-  }
-}
+// class _KeyboardEvents {
+//   ValueChanged<RawKeyEvent>? _listener;
+//
+//   void listen(ValueChanged<RawKeyEvent>? value){
+//     if (_listener == value) return;
+//     if (_listener != null){
+//       RawKeyboard.instance.removeListener(_listener!);
+//     }
+//     if (value != null){
+//       RawKeyboard.instance.addListener(value);
+//     }
+//     _listener = value;
+//   }
+// }
 
 void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
   // do nothing
@@ -54,7 +54,6 @@ class Game extends StatefulWidget {
       bool drawCanvasAfterUpdate = true,
       this.framesPerSecond = 60,
       ThemeData? themeData,
-
   }){
     engine.state.backgroundColor.value = backgroundColor;
     engine.state.drawCanvasAfterUpdate = drawCanvasAfterUpdate;

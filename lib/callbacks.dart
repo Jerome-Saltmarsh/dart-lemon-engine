@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 
 class LemonEngineCallbacks {
   Function? onMouseDragging;
@@ -9,4 +10,7 @@ class LemonEngineCallbacks {
   Function? onRightClicked;
   Function? onRightClickReleased;
   Function(Offset position, Offset previous)? onMouseMoved;
+  Function(LogicalKeyboardKey key)? onKeyPressed;
+  Function(LogicalKeyboardKey key, int frames)? onKeyHeld;
+  Function(LogicalKeyboardKey key)? onKeyReleased;
 }
