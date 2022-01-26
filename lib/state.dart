@@ -7,6 +7,8 @@ import 'package:lemon_watch/watch.dart';
 import 'enums.dart';
 
 class LemonEngineState {
+  final Watch<ThemeData?> themeData = Watch(null);
+  int millisecondsSinceLastFrame = 50;
   bool drawCanvasAfterUpdate = true;
   final drawFrame = ValueNotifier<int>(0);
   final Screen screen = Screen();

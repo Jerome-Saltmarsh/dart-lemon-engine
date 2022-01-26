@@ -41,10 +41,9 @@ Offset get screenCenterWorld => Offset(screenCenterWorldX, screenCenterWorldY);
 
 bool get mouseAvailable => true;
 
-int _millisecondsSinceLastFrame = 50;
 DateTime _previousUpdateTime = DateTime.now();
 
-int get millisecondsSinceLastFrame => _millisecondsSinceLastFrame;
+int get millisecondsSinceLastFrame => engine.state.millisecondsSinceLastFrame;
 
 StreamController<bool> onRightClickChanged = StreamController.broadcast();
 
@@ -70,7 +69,6 @@ final _UI ui = _UI();
 class _UI {
   final Watch<int> fps = Watch(0);
   final Watch<Color> backgroundColor = Watch(Colors.white);
-  final Watch<ThemeData?> themeData = Watch(null);
 }
 
 void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
@@ -104,15 +102,15 @@ class Game extends StatefulWidget {
   }){
     ui.backgroundColor.value = backgroundColor;
     engine.state.drawCanvasAfterUpdate = drawCanvasAfterUpdate;
-    ui.themeData.value = themeData;
+    engine.state.themeData.value = themeData;
     engine.state.drawCanvas = drawCanvas;
   }
 
   void _internalUpdate() {
     DateTime now = DateTime.now();
-    _millisecondsSinceLastFrame = now.difference(_previousUpdateTime).inMilliseconds;
-    if (_millisecondsSinceLastFrame > 0){
-      ui.fps.value = 1000 ~/ _millisecondsSinceLastFrame;
+    engine.state.millisecondsSinceLastFrame = now.difference(_previousUpdateTime).inMilliseconds;
+    if (engine.state.millisecondsSinceLastFrame > 0){
+      ui.fps.value = 1000 ~/ engine.state.millisecondsSinceLastFrame;
     }
     _previousUpdateTime = now;
     engine.state.screen.left = engine.state.camera.x;
@@ -171,7 +169,7 @@ class _GameState extends State<Game> {
 
   @override
   Widget build(BuildContext context) {
-    return NullableWatchBuilder<ThemeData?>(ui.themeData, (ThemeData? themeData){
+    return NullableWatchBuilder<ThemeData?>(engine.state.themeData, (ThemeData? themeData){
       return MaterialApp(
         title: widget.title,
         routes: widget.routes ?? {},
