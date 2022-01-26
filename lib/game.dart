@@ -142,10 +142,6 @@ void redrawCanvas() {
 final _frame = ValueNotifier<int>(0);
 final _foregroundFrame = ValueNotifier<int>(0);
 const int millisecondsPerSecond = 1000;
-bool _rightClickDown = false;
-bool get rightClickDown => _rightClickDown;
-
-final Watch<WidgetBuilder?> overrideBuilder = Watch(null);
 
 
 class _GameState extends State<Game> {
@@ -185,42 +181,37 @@ class _GameState extends State<Game> {
 
   @override
   Widget build(BuildContext context) {
-    return NullableWatchBuilder<WidgetBuilder?>(overrideBuilder, (WidgetBuilder? builder){
-      if (builder != null){
-        return builder(context);
-      }
-      return NullableWatchBuilder<ThemeData?>(ui.themeData, (ThemeData? themeData){
-        return MaterialApp(
-          title: widget.title,
-          routes: widget.routes ?? {},
-          theme: themeData,
-          home: Scaffold(
-            body: WatchBuilder(engine.state.initialized, (bool? value) {
-              if (value != true) {
-                WidgetBuilder? buildLoadingScreen = widget.buildLoadingScreen;
-                if (buildLoadingScreen != null){
-                  return buildLoadingScreen(context);
-                }
-                return Text("Loading");
+    return NullableWatchBuilder<ThemeData?>(ui.themeData, (ThemeData? themeData){
+      return MaterialApp(
+        title: widget.title,
+        routes: widget.routes ?? {},
+        theme: themeData,
+        home: Scaffold(
+          body: WatchBuilder(engine.state.initialized, (bool? value) {
+            if (value != true) {
+              WidgetBuilder? buildLoadingScreen = widget.buildLoadingScreen;
+              if (buildLoadingScreen != null){
+                return buildLoadingScreen(context);
               }
-              return LayoutBuilder(
-                builder: (BuildContext context, BoxConstraints constraints) {
-                  engine.state.buildContext = context;
-                  engine.state.screen.width = constraints.maxWidth;
-                  engine.state.screen.height = constraints.maxHeight;
-                  return Stack(
-                    children: [
-                      _buildBody(context),
-                      _buildUI(),
-                    ],
-                  );
-                },
-              );
-            }),
-          ),
-          debugShowCheckedModeBanner: false,
-        );
-      });
+              return Text("Loading");
+            }
+            return LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                engine.state.buildContext = context;
+                engine.state.screen.width = constraints.maxWidth;
+                engine.state.screen.height = constraints.maxHeight;
+                return Stack(
+                  children: [
+                    _buildBody(context),
+                    _buildUI(),
+                  ],
+                );
+              },
+            );
+          }),
+        ),
+        debugShowCheckedModeBanner: false,
+      );
     });
   }
 
@@ -243,12 +234,10 @@ class _GameState extends State<Game> {
         },
         child: GestureDetector(
             onSecondaryTapDown: (_) {
-              _rightClickDown = true;
               onRightClickChanged.add(true);
             },
             onSecondaryTapUp: (_) {
               onRightClickChanged.add(false);
-              _rightClickDown = false;
             },
             onPanStart: (start) {
               engine.state.mouseDragging = true;
