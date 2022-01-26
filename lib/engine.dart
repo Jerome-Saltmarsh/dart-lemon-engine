@@ -24,16 +24,6 @@ bool keyPressed(LogicalKeyboardKey key) {
   return RawKeyboard.instance.keysPressed.contains(key);
 }
 
-Future<Image> loadImage(String url) async {
-  final ByteData data = await rootBundle.load(url);
-  final Uint8List img = Uint8List.view(data.buffer);
-  final Completer<Image> completer = new Completer();
-  decodeImageFromList(img, (Image img) {
-    return completer.complete(img);
-  });
-  return completer.future;
-}
-
 double screenToWorldX(double value) {
   return engine.state.camera.x + value / engine.state.zoom;
 }
@@ -53,4 +43,14 @@ bool onScreen(double x, double y) {
       x < engine.state.screen.right &&
       y > engine.state.screen.top &&
       y < engine.state.screen.bottom;
+}
+
+Future<Image> loadImage(String url) async {
+  final ByteData data = await rootBundle.load(url);
+  final Uint8List img = Uint8List.view(data.buffer);
+  final Completer<Image> completer = new Completer();
+  decodeImageFromList(img, (Image img) {
+    return completer.complete(img);
+  });
+  return completer.future;
 }

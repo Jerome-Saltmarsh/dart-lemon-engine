@@ -14,7 +14,6 @@ import 'enums.dart';
 // private global variables
 Offset _mousePosition = Offset(0, 0);
 Offset _previousMousePosition = Offset(0, 0);
-Offset _mouseDelta = Offset(0, 0);
 bool _clickProcessed = true;
 late StateSetter uiSetState;
 // bool canvasActive =
@@ -23,8 +22,6 @@ late StateSetter uiSetState;
 Offset get mousePosition => _mousePosition;
 
 Offset get previousMousePosition => _previousMousePosition;
-
-Offset get mouseVelocity => _mouseDelta;
 
 double get mouseX => _mousePosition.dx;
 
@@ -288,9 +285,6 @@ class _GameState extends State<Game> {
     return WatchBuilder(engine.state.cursorType, (CursorType cursorType){
       return MouseRegion(
         cursor: mapCursorTypeToSystemMouseCursor(cursorType),
-        onHover: (PointerHoverEvent pointerHoverEvent) {
-          _mouseDelta = pointerHoverEvent.delta;
-        },
         child: child,
       );
     });
