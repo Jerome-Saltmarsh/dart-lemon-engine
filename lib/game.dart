@@ -68,7 +68,6 @@ final _UI ui = _UI();
 
 class _UI {
   final Watch<int> fps = Watch(0);
-  final Watch<Color> backgroundColor = Watch(Colors.white);
 }
 
 void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
@@ -100,7 +99,7 @@ class Game extends StatefulWidget {
       ThemeData? themeData,
 
   }){
-    ui.backgroundColor.value = backgroundColor;
+    engine.state.backgroundColor.value = backgroundColor;
     engine.state.drawCanvasAfterUpdate = drawCanvasAfterUpdate;
     engine.state.themeData.value = themeData;
     engine.state.drawCanvas = drawCanvas;
@@ -236,7 +235,7 @@ class _GameState extends State<Game> {
             onPanUpdate: (DragUpdateDetails value) {
               engine.callbacks.onMouseDragging?.call();
             },
-            child: WatchBuilder(ui.backgroundColor, (Color backgroundColor){
+            child: WatchBuilder(engine.state.backgroundColor, (Color backgroundColor){
               return Container(
                   color: backgroundColor,
                   width: engine.state.screen.width,
