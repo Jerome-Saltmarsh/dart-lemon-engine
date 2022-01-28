@@ -7,6 +7,10 @@ import 'package:lemon_watch/watch.dart';
 import 'enums.dart';
 
 class LemonEngineState {
+  bool cameraSmoothFollow = true;
+  double cameraFollowSpeed = 0.04;
+  double cameraZoomSpeed = 0.95;
+  double targetZoom = 1;
   final Map<LogicalKeyboardKey, int> keyboardState = {};
   Offset mousePosition = Offset(0, 0);
   Offset previousMousePosition = Offset(0, 0);
@@ -26,6 +30,7 @@ class LemonEngineState {
   Vector2 camera = Vector2(0, 0);
   double zoom = 1.0;
   DrawCanvas? drawCanvas;
+  Function? update;
   late Canvas canvas;
   Paint paint = Paint()
     ..color = Colors.white

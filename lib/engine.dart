@@ -10,6 +10,8 @@ import 'package:lemon_engine/callbacks.dart';
 import 'package:lemon_engine/draw.dart';
 import 'package:lemon_engine/events.dart';
 import 'package:lemon_engine/state.dart';
+import 'package:lemon_math/Vector2.dart';
+import 'package:lemon_math/distance_between.dart';
 import 'package:universal_html/html.dart';
 
 final _Engine engine = _Engine();
@@ -54,6 +56,14 @@ Future<Image> loadImage(String url) async {
     return completer.complete(img);
   });
   return completer.future;
+}
+
+double distanceFromMouse(double x, double y) {
+  return distanceBetween(mouseWorldX, mouseWorldY, x, y);
+}
+
+T closestToMouse<T extends Vector2>(List<T> values){
+  return findClosest(values, mouseWorldX, mouseWorldY);
 }
 
 // global constants

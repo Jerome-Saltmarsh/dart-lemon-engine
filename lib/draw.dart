@@ -1,4 +1,6 @@
 
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'dart:ui' as ui;
 import 'engine.dart';
@@ -23,4 +25,27 @@ class LemonEngineDraw {
   void atlas(ui.Image image, List<RSTransform> transforms, List<Rect> rects){
     engine.state.canvas.drawAtlas(image, transforms, rects, null, null, null, engine.state.paint);
   }
+
+  void drawCircleOutline({
+    required double radius,
+    required double x,
+    required double y,
+    required Color color,
+    int sides = 6
+  }) {
+    double r = (pi * 2) / sides;
+    List<Offset> points = [];
+    Offset z = Offset(x, y);
+    engine.actions.setPaintColor(color);
+    engine.state.paint.strokeWidth = 3;
+
+    for (int i = 0; i <= sides; i++) {
+      double a1 = i * r;
+      points.add(Offset(cos(a1) * radius, sin(a1) * radius));
+    }
+    for (int i = 0; i < points.length - 1; i++) {
+      engine.state.canvas.drawLine(points[i] + z, points[i + 1] + z, engine.state.paint);
+    }
+  }
+
 }

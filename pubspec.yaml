@@ -9,9 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
-  lemon_watch: ^1.0.4
-  lemon_math: ^1.1.5
+  lemon_watch:
+      path: C:\Users\Jerome\github\dart-lemon-watch
+  lemon_math:
+      path: C:\Users\Jerome\github\dart-lemon-math
   universal_html: ^2.0.8
   positioned_tap_detector_2: ^1.0.4
 

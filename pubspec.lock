@@ -58,17 +58,17 @@ packages:
   lemon_math:
     dependency: "direct main"
     description:
-      name: lemon_math
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "C:\\Users\\Jerome\\github\\dart-lemon-math"
+      relative: false
+    source: path
     version: "1.1.5"
   lemon_watch:
     dependency: "direct main"
     description:
-      name: lemon_watch
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.0.4"
+      path: "C:\\Users\\Jerome\\github\\dart-lemon-watch"
+      relative: false
+    source: path
+    version: "1.0.5"
   meta:
     dependency: transitive
     description:

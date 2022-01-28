@@ -35,7 +35,6 @@ class Game extends StatefulWidget {
   final String title;
   final Map<String, WidgetBuilder>? routes;
   final Function init;
-  final Function update;
   final WidgetBuilder? buildLoadingScreen;
   final WidgetBuilder buildUI;
   final DrawCanvas drawCanvasForeground;
@@ -44,7 +43,7 @@ class Game extends StatefulWidget {
   Game({
       required this.title,
       required this.init,
-      required this.update,
+      required Function update,
       required this.buildUI,
       this.buildLoadingScreen,
       this.routes,
@@ -59,6 +58,7 @@ class Game extends StatefulWidget {
     engine.state.drawCanvasAfterUpdate = drawCanvasAfterUpdate;
     engine.state.themeData.value = themeData;
     engine.state.drawCanvas = drawCanvas;
+    engine.state.update = update;
   }
 
   void _internalUpdate() {
@@ -72,7 +72,16 @@ class Game extends StatefulWidget {
     engine.state.screen.right = engine.state.camera.x + (engine.state.screen.width / engine.state.zoom);
     engine.state.screen.top = engine.state.camera.y;
     engine.state.screen.bottom = engine.state.camera.y + (engine.state.screen.height / engine.state.zoom);
-    update();
+
+    if (engine.state.cameraSmoothFollow){
+      double sX = screenCenterWorldX;
+      double sY = screenCenterWorldY;
+      double zoomDiff = engine.state.targetZoom - engine.state.zoom;
+      engine.state.zoom += zoomDiff * engine.state.cameraFollowSpeed;
+      engine.actions.cameraCenter(sX, sY);
+    }
+
+    engine.state.update?.call();
 
     if (engine.state.drawCanvasAfterUpdate) {
       engine.actions.redrawCanvas();
@@ -93,6 +102,7 @@ class _GameState extends State<Game> {
   void _update(Timer timer) {
     widget._internalUpdate();
   }
+
 
   @override
   void initState() {
