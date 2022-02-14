@@ -6,26 +6,8 @@ import 'package:lemon_engine/engine.dart';
 import 'package:lemon_watch/watch_builder.dart';
 import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
 import 'package:universal_html/html.dart';
-
 import 'enums.dart';
 
-
-// final _KeyboardEvents keyboardEvents = _KeyboardEvents();
-
-// class _KeyboardEvents {
-//   ValueChanged<RawKeyEvent>? _listener;
-//
-//   void listen(ValueChanged<RawKeyEvent>? value){
-//     if (_listener == value) return;
-//     if (_listener != null){
-//       RawKeyboard.instance.removeListener(_listener!);
-//     }
-//     if (value != null){
-//       RawKeyboard.instance.addListener(value);
-//     }
-//     _listener = value;
-//   }
-// }
 
 void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
   // do nothing
@@ -54,37 +36,35 @@ class Game extends StatefulWidget {
       this.framesPerSecond = 60,
       ThemeData? themeData,
   }){
-    engine.state.backgroundColor.value = backgroundColor;
-    engine.state.drawCanvasAfterUpdate = drawCanvasAfterUpdate;
-    engine.state.themeData.value = themeData;
-    engine.state.drawCanvas = drawCanvas;
-    engine.state.update = update;
+    engine.backgroundColor.value = backgroundColor;
+    engine.drawCanvasAfterUpdate = drawCanvasAfterUpdate;
+    engine.themeData.value = themeData;
+    engine.drawCanvas.value = drawCanvas;
+    engine.update = update;
   }
 
   void _internalUpdate() {
     DateTime now = DateTime.now();
-    engine.state.millisecondsSinceLastFrame = now.difference(engine.state.previousUpdateTime).inMilliseconds;
-    if (engine.state.millisecondsSinceLastFrame > 0){
-      engine.state.fps.value = millisecondsPerSecond ~/ engine.state.millisecondsSinceLastFrame;
+    engine.millisecondsSinceLastFrame = now.difference(engine.previousUpdateTime).inMilliseconds;
+    if (engine.millisecondsSinceLastFrame > 0){
+      engine.fps.value = millisecondsPerSecond ~/ engine.millisecondsSinceLastFrame;
     }
-    engine.state.previousUpdateTime = now;
-    engine.state.screen.left = engine.state.camera.x;
-    engine.state.screen.right = engine.state.camera.x + (engine.state.screen.width / engine.state.zoom);
-    engine.state.screen.top = engine.state.camera.y;
-    engine.state.screen.bottom = engine.state.camera.y + (engine.state.screen.height / engine.state.zoom);
+    engine.previousUpdateTime = now;
+    engine.screen.left = engine.camera.x;
+    engine.screen.right = engine.camera.x + (engine.screen.width / engine.zoom);
+    engine.screen.top = engine.camera.y;
+    engine.screen.bottom = engine.camera.y + (engine.screen.height / engine.zoom);
 
-    if (engine.state.cameraSmoothFollow){
-      double sX = screenCenterWorldX;
-      double sY = screenCenterWorldY;
-      double zoomDiff = engine.state.targetZoom - engine.state.zoom;
-      engine.state.zoom += zoomDiff * engine.state.cameraFollowSpeed;
-      engine.actions.cameraCenter(sX, sY);
-    }
+    double sX = screenCenterWorldX;
+    double sY = screenCenterWorldY;
+    double zoomDiff = engine.targetZoom - engine.zoom;
+    engine.zoom += zoomDiff * engine.zoomSensitivity;
+    engine.cameraCenter(sX, sY);
 
-    engine.state.update?.call();
+    engine.update?.call();
 
-    if (engine.state.drawCanvasAfterUpdate) {
-      engine.actions.redrawCanvas();
+    if (engine.drawCanvasAfterUpdate) {
+      engine.redrawCanvas();
     }
   }
 
@@ -112,20 +92,22 @@ class _GameState extends State<Game> {
 
     document.addEventListener("mousemove", (value){
       if (value is MouseEvent){
-        engine.state.previousMousePosition = engine.state.mousePosition;
-        engine.state.mousePosition = Offset(value.page.x.toDouble(), value.page.y.toDouble());
+        engine.previousMousePosition.x = engine.mousePosition.x;
+        engine.previousMousePosition.y = engine.mousePosition.y;
+        engine.mousePosition.x = value.page.x.toDouble();
+        engine.mousePosition.y = value.page.y.toDouble();
         engine.callbacks.onMouseMoved?.call(
-            engine.state.mousePosition, engine.state.previousMousePosition
+            engine.mousePosition, engine.previousMousePosition
         );
       }
     }, false);
   }
 
   Future _internalInit() async {
-    engine.actions.disableRightClickContextMenu();
-    engine.state.paint.isAntiAlias = false;
+    engine.disableRightClickContextMenu();
+    engine.paint.isAntiAlias = false;
     await widget.init();
-    engine.state.initialized.value = true;
+    engine.initialized.value = true;
     int millisecondsPerFrame = millisecondsPerSecond ~/ widget.framesPerSecond;
     Duration updateDuration = Duration(milliseconds: millisecondsPerFrame);
     _updateTimer = Timer.periodic(updateDuration, _update);
@@ -134,13 +116,13 @@ class _GameState extends State<Game> {
 
   @override
   Widget build(BuildContext context) {
-    return NullableWatchBuilder<ThemeData?>(engine.state.themeData, (ThemeData? themeData){
+    return NullableWatchBuilder<ThemeData?>(engine.themeData, (ThemeData? themeData){
       return MaterialApp(
         title: widget.title,
         routes: widget.routes ?? {},
         theme: themeData,
         home: Scaffold(
-          body: WatchBuilder(engine.state.initialized, (bool? value) {
+          body: WatchBuilder(engine.initialized, (bool? value) {
             if (value != true) {
               WidgetBuilder? buildLoadingScreen = widget.buildLoadingScreen;
               if (buildLoadingScreen != null){
@@ -150,9 +132,9 @@ class _GameState extends State<Game> {
             }
             return LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
-                engine.state.buildContext = context;
-                engine.state.screen.width = constraints.maxWidth;
-                engine.state.screen.height = constraints.maxHeight;
+                engine.buildContext = context;
+                engine.screen.width = constraints.maxWidth;
+                engine.screen.height = constraints.maxHeight;
                 return Stack(
                   children: [
                     _buildCanvas(context),
@@ -192,29 +174,29 @@ class _GameState extends State<Game> {
               engine.callbacks.onRightClickReleased?.call();
             },
             onPanStart: (start) {
-              engine.state.mouseDragging = true;
+              engine.mouseDragging = true;
               engine.callbacks.onPanStarted?.call();
             },
             onPanEnd: (value) {
-              engine.state.mouseDragging = false;
+              engine.mouseDragging = false;
             },
             onPanUpdate: (DragUpdateDetails value) {
               engine.callbacks.onMouseDragging?.call();
             },
-            child: WatchBuilder(engine.state.backgroundColor, (Color backgroundColor){
+            child: WatchBuilder(engine.backgroundColor, (Color backgroundColor){
               return Container(
                   color: backgroundColor,
-                  width: engine.state.screen.width,
-                  height: engine.state.screen.height,
+                  width: engine.screen.width,
+                  height: engine.screen.height,
                   child: CustomPaint(
-                      painter: _GamePainter(repaint: engine.state.drawFrame),
+                      painter: _GamePainter(repaint: engine.drawFrame),
                       foregroundPainter: _GamePainter(
                           repaint: _foregroundFrame)));
             })),
       ),
     );
 
-    return WatchBuilder(engine.state.cursorType, (CursorType cursorType){
+    return WatchBuilder(engine.cursorType, (CursorType cursorType){
       return MouseRegion(
         cursor: mapCursorTypeToSystemMouseCursor(cursorType),
         child: child,
@@ -236,10 +218,11 @@ class _GamePainter extends CustomPainter {
 
   @override
   void paint(Canvas _canvas, Size _size) {
-    engine.state.canvas = _canvas;
-    _canvas.scale(engine.state.zoom, engine.state.zoom);
-    _canvas.translate(-engine.state.camera.x, -engine.state.camera.y);
-    engine.state.drawCanvas?.call(_canvas, _size);
+    engine.canvas = _canvas;
+    _canvas.scale(engine.zoom, engine.zoom);
+    _canvas.translate(-engine.camera.x, -engine.camera.y);
+    engine.drawCanvas.value?.call(_canvas, _size);
+    engine.flushRenderBuffer();
   }
 
   @override

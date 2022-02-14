@@ -2,27 +2,18 @@ import 'package:flutter/services.dart';
 import 'package:lemon_engine/engine.dart';
 
 class LemonEngineEvents {
+  
+  void onMouseScroll(double amount) {
+    engine.targetZoom -= amount * engine.scrollSensitivity;
+  }
+
   void onKeyboardEvent(RawKeyEvent event) {
-    final key = event.logicalKey;
-    if (event is RawKeyUpEvent) {
-      engine.state.keyboardState[key] = 0;
-      engine.callbacks.onKeyReleased?.call(key);
+    if (event is RawKeyDownEvent) {
+      engine.keyPressedHandlers[event.logicalKey]?.call();
       return;
     }
-    if (event is RawKeyDownEvent) {
-      int? frames = engine.state.keyboardState[key];
-      if (frames != null){
-        if (frames == 0){
-          engine.callbacks.onKeyPressed?.call(key);
-          return;
-        }
-        int nextFrame = frames + 1;
-        engine.state.keyboardState[key] = nextFrame;
-        engine.callbacks.onKeyHeld?.call(key, nextFrame);
-        return;
-      }
-      engine.state.keyboardState[key] = 1;
-      engine.callbacks.onKeyPressed?.call(key);
+    if (event is RawKeyUpEvent) {
+      engine.keyReleasedHandlers[event.logicalKey]?.call();
     }
   }
 }

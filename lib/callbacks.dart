@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:lemon_math/Vector2.dart';
 import 'package:flutter/services.dart';
 
 class LemonEngineCallbacks {
@@ -9,7 +9,7 @@ class LemonEngineCallbacks {
   Function(double value)? onMouseScroll;
   Function? onRightClicked;
   Function? onRightClickReleased;
-  Function(Offset position, Offset previous)? onMouseMoved;
+  Function(Vector2 position, Vector2 previous)? onMouseMoved;
   Function(LogicalKeyboardKey key)? onKeyPressed;
   Function(LogicalKeyboardKey key, int frames)? onKeyHeld;
   Function(LogicalKeyboardKey key)? onKeyReleased;
