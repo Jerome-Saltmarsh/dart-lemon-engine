@@ -13,6 +13,10 @@ void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
   // do nothing
 }
 
+final _screen = engine.screen;
+final _camera = engine.camera;
+const _padding = 10;
+
 class Game extends StatefulWidget {
   final String title;
   final Map<String, WidgetBuilder>? routes;
@@ -44,23 +48,22 @@ class Game extends StatefulWidget {
   }
 
   void _internalUpdate() {
-    DateTime now = DateTime.now();
-    engine.millisecondsSinceLastFrame = now.difference(engine.previousUpdateTime).inMilliseconds;
-    if (engine.millisecondsSinceLastFrame > 0){
-      engine.fps.value = millisecondsPerSecond ~/ engine.millisecondsSinceLastFrame;
-    }
-    engine.previousUpdateTime = now;
-    engine.screen.left = engine.camera.x;
-    engine.screen.right = engine.camera.x + (engine.screen.width / engine.zoom);
-    engine.screen.top = engine.camera.y;
-    engine.screen.bottom = engine.camera.y + (engine.screen.height / engine.zoom);
+    // DateTime now = DateTime.now();
+    // engine.millisecondsSinceLastFrame = now.difference(engine.previousUpdateTime).inMilliseconds;
+    // if (engine.millisecondsSinceLastFrame > 0){
+    //   engine.fps.value = millisecondsPerSecond ~/ engine.millisecondsSinceLastFrame;
+    // }
+    // engine.previousUpdateTime = now;
 
-    double sX = screenCenterWorldX;
-    double sY = screenCenterWorldY;
-    double zoomDiff = engine.targetZoom - engine.zoom;
+    _screen.left = _camera.x - _padding;
+    _screen.right = _camera.x + (_screen.width / engine.zoom) + _padding;
+    _screen.top = _camera.y - _padding;
+    _screen.bottom = _camera.y + (_screen.height / engine.zoom) + _padding;
+    final sX = screenCenterWorldX;
+    final sY = screenCenterWorldY;
+    final zoomDiff = engine.targetZoom - engine.zoom;
     engine.zoom += zoomDiff * engine.zoomSensitivity;
     engine.cameraCenter(sX, sY);
-
     engine.update?.call();
 
     if (engine.drawCanvasAfterUpdate) {

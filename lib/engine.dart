@@ -23,7 +23,7 @@ class _Engine {
   static const _indexesPerBuffer = 4;
 
   int bufferIndex = 0;
-  final int buffers = 100;
+  final int buffers = 300;
   late int bufferSize;
   late final Float32List src;
   late final Float32List dst;
@@ -72,6 +72,8 @@ class _Engine {
   Map<LogicalKeyboardKey, Function> keyPressedHandlers = {};
   Map<LogicalKeyboardKey, Function> keyReleasedHandlers = {};
 
+  int get frame => drawFrame.value;
+  
   _Engine(){
     bufferSize = buffers * _indexesPerBuffer;
     src = Float32List(bufferSize);
@@ -126,7 +128,34 @@ class _Engine {
     dst[i + 2] = x;
     dst[i + 3] = y;
   }
-
+  
+  void render({
+    required double dstX, 
+    required double dstY, 
+    required double srcX, 
+    required double srcY,
+    double srcSize = 64.0,
+    double scale = 1.0,
+    double rotation = 0.0,
+    double anchorX = 0.5,
+    double anchorY = 0.5,
+  }){
+    mapDst(
+        x: dstX, 
+        y: dstY, 
+        scale: scale, 
+        rotation: rotation, 
+        anchorX: srcSize * anchorX, 
+        anchorY: srcSize * anchorY
+    );
+    mapSrc(
+        x: srcX, 
+        y: srcY, 
+        width: srcSize, 
+        height: srcSize
+    );
+    renderAtlas();
+  }
 
   void renderAtlas(){
     bufferIndex++;
@@ -281,7 +310,7 @@ double get mouseWorldY => screenToWorldY(_mousePosition.y);
 bool get fullScreenActive => document.fullscreenElement != null;
 
 // global typedefs
-typedef DrawCanvas(Canvas canvass, Size size);
+typedef DrawCanvas(Canvas canvas, Size size);
 
 // classes
 abstract class KeyboardEventHandler {

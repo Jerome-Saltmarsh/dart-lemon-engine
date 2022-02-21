@@ -31,13 +31,14 @@ class LemonEngineDraw {
     required double x,
     required double y,
     required Color color,
-    int sides = 6
+    int sides = 6,
+    double width = 3,
   }) {
     double r = (pi * 2) / sides;
     List<Offset> points = [];
     Offset z = Offset(x, y);
     engine.setPaintColor(color);
-    engine.paint.strokeWidth = 3;
+    engine.paint.strokeWidth = width;
 
     for (int i = 0; i <= sides; i++) {
       double a1 = i * r;
