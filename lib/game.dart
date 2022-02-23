@@ -4,8 +4,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:lemon_engine/engine.dart';
 import 'package:lemon_watch/watch_builder.dart';
-import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
-import 'package:universal_html/html.dart';
 import 'enums.dart';
 
 
@@ -15,7 +13,7 @@ void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
 
 final _screen = engine.screen;
 final _camera = engine.camera;
-const _padding = 10;
+const _padding = 20;
 
 class Game extends StatefulWidget {
   final String title;
@@ -48,13 +46,6 @@ class Game extends StatefulWidget {
   }
 
   void _internalUpdate() {
-    // DateTime now = DateTime.now();
-    // engine.millisecondsSinceLastFrame = now.difference(engine.previousUpdateTime).inMilliseconds;
-    // if (engine.millisecondsSinceLastFrame > 0){
-    //   engine.fps.value = millisecondsPerSecond ~/ engine.millisecondsSinceLastFrame;
-    // }
-    // engine.previousUpdateTime = now;
-
     _screen.left = _camera.x - _padding;
     _screen.right = _camera.x + (_screen.width / engine.zoom) + _padding;
     _screen.top = _camera.y - _padding;
@@ -64,8 +55,11 @@ class Game extends StatefulWidget {
     final zoomDiff = engine.targetZoom - engine.zoom;
     engine.zoom += zoomDiff * engine.zoomSensitivity;
     engine.cameraCenter(sX, sY);
-    engine.update?.call();
+    if (engine.mouseLeftDown.value) {
+      engine.mouseLeftDownFrames++;
+    }
 
+    engine.update?.call();
     if (engine.drawCanvasAfterUpdate) {
       engine.redrawCanvas();
     }
@@ -92,18 +86,6 @@ class _GameState extends State<Game> {
     super.initState();
     print("lemon_engine.init()");
     _internalInit();
-
-    document.addEventListener("mousemove", (value){
-      if (value is MouseEvent){
-        engine.previousMousePosition.x = engine.mousePosition.x;
-        engine.previousMousePosition.y = engine.mousePosition.y;
-        engine.mousePosition.x = value.page.x.toDouble();
-        engine.mousePosition.y = value.page.y.toDouble();
-        engine.callbacks.onMouseMoved?.call(
-            engine.mousePosition, engine.previousMousePosition
-        );
-      }
-    }, false);
   }
 
   Future _internalInit() async {
@@ -155,48 +137,72 @@ class _GameState extends State<Game> {
 
   Widget _buildCanvas(BuildContext context) {
 
-    Widget child = PositionedTapDetector2(
-      onLongPress: (TapPosition position) {
-        engine.callbacks.onLongLeftClicked?.call();
-
+    final child = Listener(
+      onPointerSignal: (PointerSignalEvent pointerSignalEvent) {
+        if (pointerSignalEvent is PointerScrollEvent) {
+          engine.callbacks.onMouseScroll?.call(pointerSignalEvent.scrollDelta.dy);
+        }
       },
-      onTap: (position) {
-        engine.callbacks.onLeftClicked?.call();
+      onPointerDown: (PointerDownEvent event){
+        print("pointer down event");
+        engine.mouseLeftDown.value = true;
       },
-      child: Listener(
-        onPointerSignal: (pointerSignalEvent) {
-          if (pointerSignalEvent is PointerScrollEvent) {
-            engine.callbacks.onMouseScroll?.call(pointerSignalEvent.scrollDelta.dy);
-          }
-        },
-        child: GestureDetector(
-            onSecondaryTapDown: (_) {
-              engine.callbacks.onRightClicked?.call();
-            },
-            onSecondaryTapUp: (_) {
-              engine.callbacks.onRightClickReleased?.call();
-            },
-            onPanStart: (start) {
-              engine.mouseDragging = true;
-              engine.callbacks.onPanStarted?.call();
-            },
-            onPanEnd: (value) {
-              engine.mouseDragging = false;
-            },
-            onPanUpdate: (DragUpdateDetails value) {
-              engine.callbacks.onMouseDragging?.call();
-            },
-            child: WatchBuilder(engine.backgroundColor, (Color backgroundColor){
-              return Container(
-                  color: backgroundColor,
-                  width: engine.screen.width,
-                  height: engine.screen.height,
-                  child: CustomPaint(
-                      painter: _GamePainter(repaint: engine.drawFrame),
-                      foregroundPainter: _GamePainter(
-                          repaint: _foregroundFrame)));
-            })),
-      ),
+      onPointerUp: (PointerUpEvent event){
+        print("pointer up event");
+        engine.mouseLeftDown.value = false;
+        engine.mouseLeftDownFrames = 0;
+      },
+      onPointerHover:(PointerHoverEvent event){
+        engine.previousMousePosition.x = engine.mousePosition.x;
+        engine.previousMousePosition.y = engine.mousePosition.y;
+        engine.mousePosition.x = event.position.dx;
+        engine.mousePosition.y = event.position.dy;
+        engine.callbacks.onMouseMoved?.call(
+            engine.mousePosition, engine.previousMousePosition
+        );
+      },
+      onPointerMove: (PointerMoveEvent event){
+        engine.previousMousePosition.x = engine.mousePosition.x;
+        engine.previousMousePosition.y = engine.mousePosition.y;
+        engine.mousePosition.x = event.position.dx;
+        engine.mousePosition.y = event.position.dy;
+        engine.callbacks.onMouseMoved?.call(
+            engine.mousePosition, engine.previousMousePosition
+        );
+      },
+      child: GestureDetector(
+          onLongPress: (){
+            engine.callbacks.onLongLeftClicked?.call();
+          },
+          onTap: (){
+            engine.callbacks.onLeftClicked?.call();
+          },
+          onPanStart: (start) {
+            engine.mouseDragging = true;
+            engine.callbacks.onPanStarted?.call();
+          },
+          onPanUpdate: (DragUpdateDetails value) {
+            engine.callbacks.onMouseDragging?.call();
+          },
+          onPanEnd: (value) {
+            engine.mouseDragging = false;
+          },
+          onSecondaryTapDown: (_) {
+            engine.callbacks.onRightClicked?.call();
+          },
+          onSecondaryTapUp: (_) {
+            engine.callbacks.onRightClickReleased?.call();
+          },
+          child: WatchBuilder(engine.backgroundColor, (Color backgroundColor){
+            return Container(
+                color: backgroundColor,
+                width: engine.screen.width,
+                height: engine.screen.height,
+                child: CustomPaint(
+                    painter: _GamePainter(repaint: engine.drawFrame),
+                    foregroundPainter: _GamePainter(
+                        repaint: _foregroundFrame)));
+          })),
     );
 
     return WatchBuilder(engine.cursorType, (CursorType cursorType){

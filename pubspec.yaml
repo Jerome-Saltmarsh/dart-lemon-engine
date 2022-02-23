@@ -14,5 +14,4 @@ dependencies:
   lemon_math:
       path: C:\Users\Jerome\github\dart-lemon-math
   universal_html: ^2.0.8
-  positioned_tap_detector_2: ^1.0.4
 

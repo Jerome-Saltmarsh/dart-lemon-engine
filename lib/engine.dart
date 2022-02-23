@@ -16,17 +16,18 @@ import 'package:lemon_math/distance_between.dart';
 import 'package:lemon_watch/watch.dart';
 import 'package:universal_html/html.dart';
 
-final _Engine engine = _Engine();
+final engine = _Engine();
 
 class _Engine {
 
   static const _indexesPerBuffer = 4;
 
   int bufferIndex = 0;
-  final int buffers = 300;
+  final int buffers = 500;
   late int bufferSize;
   late final Float32List src;
   late final Float32List dst;
+  late final Int32List colors;
 
   final callbacks = LemonEngineCallbacks();
   final draw = LemonEngineDraw();
@@ -41,6 +42,8 @@ class _Engine {
   Vector2 mousePosition = Vector2(0, 0);
   Vector2 previousMousePosition = Vector2(0, 0);
   DateTime previousUpdateTime = DateTime.now();
+  Watch<bool> mouseLeftDown = Watch(false);
+  int mouseLeftDownFrames = 0;
   final Watch<int> fps = Watch(0);
   final Watch<Color> backgroundColor = Watch(Colors.white);
   final Watch<ThemeData?> themeData = Watch(null);
@@ -51,7 +54,6 @@ class _Engine {
   final initialized = Watch(false);
   final Watch<CursorType> cursorType = Watch(CursorType.Precise);
   late BuildContext buildContext;
-  final Watch<bool> mouseLeftDown = Watch(false);
   bool mouseDragging = false;
   Vector2 camera = Vector2(0, 0);
   double zoom = 1.0;
@@ -78,7 +80,9 @@ class _Engine {
     bufferSize = buffers * _indexesPerBuffer;
     src = Float32List(bufferSize);
     dst = Float32List(bufferSize);
-
+    colors = Int32List(buffers);
+    paint.filterQuality = FilterQuality.none;
+    paint.isAntiAlias = false;
     events = LemonEngineEvents();
     RawKeyboard.instance.addListener(events.onKeyboardEvent);
     registerZoomCameraOnMouseScroll();
@@ -99,6 +103,10 @@ class _Engine {
     src[i + 1] = y;
     src[i + 2] = x + width;
     src[i + 3] = y + height;
+  }
+  
+  void mapColor(Color color){
+    colors[bufferIndex] = color.value;
   }
 
   void mapDst({
