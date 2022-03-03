@@ -144,11 +144,9 @@ class _GameState extends State<Game> {
         }
       },
       onPointerDown: (PointerDownEvent event){
-        print("pointer down event");
         engine.mouseLeftDown.value = true;
       },
       onPointerUp: (PointerUpEvent event){
-        print("pointer up event");
         engine.mouseLeftDown.value = false;
         engine.mouseLeftDownFrames = 0;
       },
@@ -231,7 +229,9 @@ class _GamePainter extends CustomPainter {
     _canvas.scale(engine.zoom, engine.zoom);
     _canvas.translate(-engine.camera.x, -engine.camera.y);
     engine.drawCanvas.value?.call(_canvas, _size);
-    engine.flushRenderBuffer();
+    if (engine.drawCanvas.isNotNull){
+      engine.flushRenderBuffer();
+    }
   }
 
   @override

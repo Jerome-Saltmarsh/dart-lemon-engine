@@ -189,6 +189,7 @@ class _Engine {
       dst[j + 3] = 0; // y
     }
     canvas.drawRawAtlas(image, dst, src, null, null, null, paint);
+    bufferIndex = 0;
   }
 
   void cameraFollow(double x, double y, double speed){
@@ -261,9 +262,11 @@ class _Engine {
   }
 }
 
+final keyboardInstance = RawKeyboard.instance;
+
 // global utilities
 bool keyPressed(LogicalKeyboardKey key) {
-  return RawKeyboard.instance.keysPressed.contains(key);
+  return keyboardInstance.keysPressed.contains(key);
 }
 
 final _camera = engine.camera;
@@ -274,13 +277,6 @@ double screenToWorldX(double value) {
 
 double screenToWorldY(double value) {
   return _camera.y + value / engine.zoom;
-}
-
-bool onScreen(double x, double y) {
-  return x > _screen.left &&
-      x < _screen.right &&
-      y > _screen.top &&
-      y < _screen.bottom;
 }
 
 Future<ui.Image> loadImage(String url) async {
@@ -334,4 +330,16 @@ class _Screen {
   double right = 0;
   double bottom = 0;
   double left = 0;
+
+  bool contains(double x, double y) {
+    return
+      x > left
+          &&
+      x < right
+          &&
+      y > top
+          &&
+      y < bottom
+    ;
+  }
 }
