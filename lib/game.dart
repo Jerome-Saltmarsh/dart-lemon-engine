@@ -13,7 +13,7 @@ void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
 
 final _screen = engine.screen;
 final _camera = engine.camera;
-const _padding = 20;
+const _padding = 48.0;
 
 class Game extends StatefulWidget {
   final String title;

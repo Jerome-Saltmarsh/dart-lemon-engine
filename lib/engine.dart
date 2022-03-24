@@ -23,11 +23,15 @@ class _Engine {
   static const _indexesPerBuffer = 4;
 
   int bufferIndex = 0;
-  final int buffers = 500;
+  final int buffers = 400;
   late int bufferSize;
   late final Float32List src;
   late final Float32List dst;
   late final Int32List colors;
+
+
+  late final Float32List srcFlush = Float32List(4);
+  late final Float32List dstFlush = Float32List(4);
 
   final callbacks = LemonEngineCallbacks();
   final draw = LemonEngineDraw();
@@ -71,6 +75,24 @@ class _Engine {
       textDirection: TextDirection.ltr
   );
 
+  final Map<String, TextSpan> textSpans = {
+
+  };
+
+  TextSpan getTextSpan(String text){
+    var value = textSpans[text];
+    if (value != null) return value;
+    value = TextSpan(style: TextStyle(color: Colors.white), text: text);
+    textSpans[text] = value;
+    return value;
+  }
+  
+  void writeText(String text, double x, double y){
+    textPainter.text = getTextSpan(text);
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(x, y));
+  }
+
   Map<LogicalKeyboardKey, Function> keyPressedHandlers = {};
   Map<LogicalKeyboardKey, Function> keyReleasedHandlers = {};
 
@@ -95,14 +117,26 @@ class _Engine {
   void mapSrc({
     required double x,
     required double y,
-    double width = 64,
-    double height = 64
+    required double width,
+    required double height
   }){
     final i = bufferIndex * _indexesPerBuffer;
     src[i] = x;
     src[i + 1] = y;
     src[i + 2] = x + width;
     src[i + 3] = y + height;
+  }
+
+  /// Prevents the stack from adding two variables each mapping
+  void mapSrc64({
+    required double x,
+    required double y,
+  }){
+    final i = bufferIndex * _indexesPerBuffer;
+    src[i] = x;
+    src[i + 1] = y;
+    src[i + 2] = x + 64.0;
+    src[i + 3] = y + 64.0;
   }
   
   void mapColor(Color color){
@@ -136,7 +170,7 @@ class _Engine {
     dst[i + 2] = x;
     dst[i + 3] = y;
   }
-  
+
   void render({
     required double dstX, 
     required double dstY, 
@@ -175,20 +209,19 @@ class _Engine {
   /// If there are draw jobs remaining in the buffer
   /// it draws them and clears the rest
   void flushRenderBuffer(){
-    if (bufferIndex == 0) return;
-
-    for(int i = bufferIndex + 1; i < buffers; i++){
+    final end = bufferIndex;
+    for (var i = 0; i < end; i++) {
       final j = i * 4;
-      src[j] = 0;
-      src[j + 1] = 0;
-      src[j + 2] = 0;
-      src[j + 3] = 0;
-      dst[j] = 1; // scale
-      dst[j + 1] = 0; // rotation
-      dst[j + 2] = 0; // x
-      dst[j + 3] = 0; // y
+      srcFlush[0] = src[j];
+      srcFlush[1] = src[j + 1];
+      srcFlush[2] = src[j + 2];
+      srcFlush[3] = src[j + 3];
+      dstFlush[0] = dst[j]; // scale
+      dstFlush[1] = dst[j + 1]; // scale
+      dstFlush[2] = dst[j + 2]; // scale
+      dstFlush[3] = dst[j + 3]; // scale
+      canvas.drawRawAtlas(image, dstFlush, srcFlush, null, null, null, paint);
     }
-    canvas.drawRawAtlas(image, dst, src, null, null, null, paint);
     bufferIndex = 0;
   }
 
@@ -340,6 +373,18 @@ class _Screen {
       y > top
           &&
       y < bottom
+    ;
+  }
+
+  bool containsV(Vector2 value) {
+    return
+      value.x > left
+          &&
+      value.x < right
+          &&
+      value.y > top
+          &&
+      value.y < bottom
     ;
   }
 }
