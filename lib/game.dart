@@ -6,7 +6,6 @@ import 'package:lemon_engine/engine.dart';
 import 'package:lemon_watch/watch_builder.dart';
 import 'enums.dart';
 
-
 void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
   // do nothing
 }
@@ -101,7 +100,7 @@ class _GameState extends State<Game> {
 
   @override
   Widget build(BuildContext context) {
-    return NullableWatchBuilder<ThemeData?>(engine.themeData, (ThemeData? themeData){
+    return WatchBuilder(engine.themeData, (ThemeData? themeData){
       return MaterialApp(
         title: widget.title,
         routes: widget.routes ?? {},
