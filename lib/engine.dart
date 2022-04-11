@@ -16,6 +16,7 @@ import 'package:lemon_math/distance_between.dart';
 import 'package:lemon_watch/watch.dart';
 import 'package:universal_html/html.dart';
 
+final _camera = engine.camera;
 final engine = _Engine();
 
 class _Engine {
@@ -29,48 +30,50 @@ class _Engine {
   late final Float32List dst;
   late final Int32List colors;
 
-
-  late final Float32List srcFlush = Float32List(4);
-  late final Float32List dstFlush = Float32List(4);
+  late final srcFlush = Float32List(4);
+  late final dstFlush = Float32List(4);
 
   final callbacks = LemonEngineCallbacks();
   final draw = LemonEngineDraw();
   late final LemonEngineEvents events;
-  double scrollSensitivity = 0.0005;
+  var scrollSensitivity = 0.0005;
   late ui.Image image;
-  bool cameraSmoothFollow = true;
-  double cameraFollowSpeed = 0.04;
-  double zoomSensitivity = 0.1;
-  double targetZoom = 1;
+  var cameraSmoothFollow = true;
+  var zoomSensitivity = 0.1;
+  var targetZoom = 1.0;
   final Map<LogicalKeyboardKey, int> keyboardState = {};
-  Vector2 mousePosition = Vector2(0, 0);
-  Vector2 previousMousePosition = Vector2(0, 0);
-  DateTime previousUpdateTime = DateTime.now();
-  Watch<bool> mouseLeftDown = Watch(false);
-  int mouseLeftDownFrames = 0;
+  var mousePosition = Vector2(0, 0);
+  var previousMousePosition = Vector2(0, 0);
+  var previousUpdateTime = DateTime.now();
+  final mouseLeftDown = Watch(false);
+  var mouseLeftDownFrames = 0;
   final Watch<int> fps = Watch(0);
   final Watch<Color> backgroundColor = Watch(Colors.white);
   final Watch<ThemeData?> themeData = Watch(null);
-  int millisecondsSinceLastFrame = 50;
-  bool drawCanvasAfterUpdate = true;
+  var millisecondsSinceLastFrame = 50;
+  var drawCanvasAfterUpdate = true;
   final drawFrame = ValueNotifier<int>(0);
   final _Screen screen = _Screen();
   final initialized = Watch(false);
   final Watch<CursorType> cursorType = Watch(CursorType.Precise);
   late BuildContext buildContext;
-  bool mouseDragging = false;
-  Vector2 camera = Vector2(0, 0);
-  double zoom = 1.0;
-  final Watch<DrawCanvas?> drawCanvas = Watch(null);
+  var mouseDragging = false;
+  final camera = Vector2(0, 0);
+  var zoom = 1.0;
+  final drawCanvas = Watch<DrawCanvas?>(null);
+  final drawForeground = Watch<DrawCanvas?>(null);
   Function? update;
   late Canvas canvas;
-  Paint paint = Paint()
+  var animationFrame = 0;
+  var framesPerAnimationFrame = 5;
+  
+  var paint = Paint()
     ..color = Colors.white
     ..strokeCap = StrokeCap.round
     ..style = PaintingStyle.fill
     ..isAntiAlias = false
     ..strokeWidth = 1;
-  TextPainter textPainter = TextPainter(
+  var textPainter = TextPainter(
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr
   );
@@ -98,7 +101,9 @@ class _Engine {
 
   int get frame => drawFrame.value;
   
+  
   _Engine(){
+    WidgetsFlutterBinding.ensureInitialized();
     bufferSize = buffers * _indexesPerBuffer;
     src = Float32List(bufferSize);
     dst = Float32List(bufferSize);
@@ -114,6 +119,29 @@ class _Engine {
     callbacks.onMouseScroll = events.onMouseScroll;
   }
 
+  void mapSrc8({
+    required double x,
+    required double y,
+  }){
+    final i = bufferIndex * _indexesPerBuffer;
+    src[i] = x;
+    src[i + 1] = y;
+    src[i + 2] = x + 8;
+    src[i + 3] = y + 8;
+  }
+
+  void mapSrcSquare({
+    required double x,
+    required double y,
+    required double size,
+  }){
+    final i = bufferIndex * _indexesPerBuffer;
+    src[i] = x;
+    src[i + 1] = y;
+    src[i + 2] = x + size;
+    src[i + 3] = y + size;
+  }
+
   void mapSrc({
     required double x,
     required double y,
@@ -127,6 +155,17 @@ class _Engine {
     src[i + 3] = y + height;
   }
 
+  void mapSrc48({
+    required double x,
+    required double y,
+  }){
+    final i = bufferIndex * _indexesPerBuffer;
+    src[i] = x;
+    src[i + 1] = y;
+    src[i + 2] = x + 48.0;
+    src[i + 3] = y + 48.0;
+  }
+
   /// Prevents the stack from adding two variables each mapping
   void mapSrc64({
     required double x,
@@ -137,6 +176,28 @@ class _Engine {
     src[i + 1] = y;
     src[i + 2] = x + 64.0;
     src[i + 3] = y + 64.0;
+  }
+
+  void mapSrc32({
+    required double x,
+    required double y,
+  }){
+    final i = bufferIndex * _indexesPerBuffer;
+    src[i] = x;
+    src[i + 1] = y;
+    src[i + 2] = x + 32.0;
+    src[i + 3] = y + 32.0;
+  }
+
+  void mapSrc96({
+    required double x,
+    required double y,
+  }){
+    final i = bufferIndex * _indexesPerBuffer;
+    src[i] = x;
+    src[i + 1] = y;
+    src[i + 2] = x + 96.0;
+    src[i + 3] = y + 96.0;
   }
   
   void mapColor(Color color){
@@ -226,10 +287,10 @@ class _Engine {
   }
 
   void cameraFollow(double x, double y, double speed){
-    final xDiff = screenCenterWorldX - x;
-    final yDiff = screenCenterWorldY - y;
-    camera.x -= xDiff * speed;
-    camera.y -= yDiff * speed;
+    final diffX = screenCenterWorldX - x;
+    final diffY = screenCenterWorldY - y;
+    camera.x -= (diffX * 75) * speed;
+    camera.y -= (diffY * 75) * speed;
   }
 
   void cameraCenter(double x, double y) {
@@ -302,14 +363,20 @@ bool keyPressed(LogicalKeyboardKey key) {
   return keyboardInstance.keysPressed.contains(key);
 }
 
-final _camera = engine.camera;
-
 double screenToWorldX(double value) {
   return _camera.x + value / engine.zoom;
 }
 
 double screenToWorldY(double value) {
   return _camera.y + value / engine.zoom;
+}
+
+double worldToScreenX(double x) {
+  return engine.zoom * (x - _camera.x);
+}
+
+double worldToScreenY(double y) {
+  return engine.zoom * (y - _camera.y);
 }
 
 Future<ui.Image> loadImage(String url) async {

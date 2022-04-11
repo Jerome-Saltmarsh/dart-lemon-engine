@@ -49,16 +49,22 @@ class Game extends StatefulWidget {
     _screen.right = _camera.x + (_screen.width / engine.zoom) + _padding;
     _screen.top = _camera.y - _padding;
     _screen.bottom = _camera.y + (_screen.height / engine.zoom) + _padding;
+
+    if (engine.mouseLeftDown.value) {
+      engine.mouseLeftDownFrames++;
+    }
+    
+    if (engine.frame % engine.framesPerAnimationFrame == 0){
+      engine.animationFrame++;
+    }
+
+    engine.update?.call();
     final sX = screenCenterWorldX;
     final sY = screenCenterWorldY;
     final zoomDiff = engine.targetZoom - engine.zoom;
     engine.zoom += zoomDiff * engine.zoomSensitivity;
     engine.cameraCenter(sX, sY);
-    if (engine.mouseLeftDown.value) {
-      engine.mouseLeftDownFrames++;
-    }
 
-    engine.update?.call();
     if (engine.drawCanvasAfterUpdate) {
       engine.redrawCanvas();
     }
@@ -197,8 +203,9 @@ class _GameState extends State<Game> {
                 height: engine.screen.height,
                 child: CustomPaint(
                     painter: _GamePainter(repaint: engine.drawFrame),
-                    foregroundPainter: _GamePainter(
-                        repaint: _foregroundFrame)));
+                    foregroundPainter: _GameForegroundPainter(repaint: _foregroundFrame),
+                )
+            );
           })),
     );
 
@@ -223,14 +230,34 @@ class _GamePainter extends CustomPainter {
       : super(repaint: repaint);
 
   @override
-  void paint(Canvas _canvas, Size _size) {
-    engine.canvas = _canvas;
-    _canvas.scale(engine.zoom, engine.zoom);
-    _canvas.translate(-engine.camera.x, -engine.camera.y);
-    engine.drawCanvas.value?.call(_canvas, _size);
+  void paint(Canvas canvas, Size size) {
+    engine.canvas = canvas;
+    canvas.scale(engine.zoom, engine.zoom);
+    canvas.translate(-_camera.x, -_camera.y);
+    engine.drawCanvas.value?.call(canvas, size);
     if (engine.drawCanvas.isNotNull){
       engine.flushRenderBuffer();
     }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return true;
+  }
+}
+
+
+class _GameForegroundPainter extends CustomPainter {
+
+  const _GameForegroundPainter({required Listenable repaint})
+      : super(repaint: repaint);
+
+  @override
+  void paint(Canvas canvas, Size _size) {
+    engine.canvas = canvas;
+    canvas.scale(engine.zoom, engine.zoom);
+    canvas.translate(-engine.camera.x, -engine.camera.y);
+    engine.drawForeground.value?.call(canvas, _size);
   }
 
   @override
