@@ -82,6 +82,34 @@ class _Engine {
 
   };
 
+  void updateEngine(){
+    const _padding = 48.0;
+    _screen.left = _camera.x - _padding;
+    _screen.right = _camera.x + (_screen.width / engine.zoom) + _padding;
+    _screen.top = _camera.y - _padding;
+    _screen.bottom = _camera.y + (_screen.height / engine.zoom) + _padding;
+
+    if (engine.mouseLeftDown.value) {
+      engine.mouseLeftDownFrames++;
+    }
+
+    if (engine.frame % engine.framesPerAnimationFrame == 0){
+      engine.animationFrame++;
+    }
+
+    engine.update?.call();
+    final sX = screenCenterWorldX;
+    final sY = screenCenterWorldY;
+    final zoomDiff = engine.targetZoom - engine.zoom;
+    engine.zoom += zoomDiff * engine.zoomSensitivity;
+    engine.cameraCenter(sX, sY);
+
+    if (engine.drawCanvasAfterUpdate) {
+      engine.redrawCanvas();
+    }
+
+  }
+
   TextSpan getTextSpan(String text){
     var value = textSpans[text];
     if (value != null) return value;
