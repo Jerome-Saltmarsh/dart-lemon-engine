@@ -11,8 +11,7 @@ import 'package:lemon_engine/callbacks.dart';
 import 'package:lemon_engine/draw.dart';
 import 'package:lemon_engine/enums.dart';
 import 'package:lemon_engine/events.dart';
-import 'package:lemon_math/Vector2.dart';
-import 'package:lemon_math/distance_between.dart';
+import 'package:lemon_math/library.dart';
 import 'package:lemon_watch/watch.dart';
 import 'package:universal_html/html.dart';
 
@@ -124,8 +123,8 @@ class _Engine {
     textPainter.paint(canvas, Offset(x, y));
   }
 
-  Map<LogicalKeyboardKey, Function> keyPressedHandlers = {};
-  Map<LogicalKeyboardKey, Function> keyReleasedHandlers = {};
+  var keyPressedHandlers = <LogicalKeyboardKey, Function>{};
+  var keyReleasedHandlers = <LogicalKeyboardKey, Function>{};
 
   int get frame => drawFrame.value;
   
@@ -284,6 +283,59 @@ class _Engine {
         y: srcY, 
         width: srcSize, 
         height: srcSize
+    );
+    renderAtlas();
+  }
+
+  void renderCustomV2({
+    required Position dst,
+    required double srcX,
+    required double srcWidth,
+    required double srcHeight,
+    double srcY = 0,
+    double scale = 1.0,
+    double rotation = 0.0,
+    double anchorX = 0.5,
+    double anchorY = 0.5,
+  }){
+    renderCustom(
+        dstX: dst.x, 
+        dstY: dst.y, 
+        srcX: srcX,
+        srcY: srcY,
+        srcWidth: srcWidth, 
+        srcHeight: srcHeight,
+        anchorX: anchorX,
+        anchorY: anchorY,
+        scale: scale,
+    );
+  }
+
+  void renderCustom({
+    required double dstX,
+    required double dstY,
+    required double srcX,
+    required double srcWidth,
+    required double srcHeight,
+    double srcY = 0,
+    double scale = 1.0,
+    double rotation = 0.0,
+    double anchorX = 0.5,
+    double anchorY = 0.5,
+  }){
+    mapDst(
+        x: dstX,
+        y: dstY,
+        scale: scale,
+        rotation: rotation,
+        anchorX: srcWidth * anchorX,
+        anchorY: srcHeight * anchorY
+    );
+    mapSrc(
+        x: srcX,
+        y: srcY,
+        width: srcWidth,
+        height: srcHeight
     );
     renderAtlas();
   }

@@ -10,9 +10,7 @@ void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
   // do nothing
 }
 
-final _screen = engine.screen;
 final _camera = engine.camera;
-const _padding = 48.0;
 
 class Game extends StatefulWidget {
   final String title;
@@ -55,10 +53,6 @@ final _foregroundFrame = ValueNotifier<int>(0);
 class _GameState extends State<Game> {
   late Timer _updateTimer;
 
-  void _update(Timer timer) {
-    engine.updateEngine();
-  }
-
 
   @override
   void initState() {
@@ -72,10 +66,6 @@ class _GameState extends State<Game> {
     engine.paint.isAntiAlias = false;
     await widget.init();
     engine.initialized.value = true;
-    // int millisecondsPerFrame = millisecondsPerSecond ~/ widget.framesPerSecond;
-    // Duration updateDuration = Duration(milliseconds: millisecondsPerFrame);
-    // _updateTimer = Timer.periodic(updateDuration, _update);
-    // print("Lemon Engine - Update Job Started");
   }
 
   @override

@@ -1,4 +1,4 @@
-import 'package:lemon_math/Vector2.dart';
+import 'package:lemon_math/functions/vector2.dart';
 import 'package:flutter/services.dart';
 
 class LemonEngineCallbacks {
