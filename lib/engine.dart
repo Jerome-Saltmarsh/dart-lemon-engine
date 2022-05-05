@@ -49,6 +49,7 @@ class _Engine {
   final Watch<int> fps = Watch(0);
   final Watch<Color> backgroundColor = Watch(Colors.white);
   final Watch<ThemeData?> themeData = Watch(null);
+  final fullScreen = Watch(false);
   var millisecondsSinceLastFrame = 50;
   var drawCanvasAfterUpdate = true;
   final drawFrame = ValueNotifier<int>(0);
@@ -140,6 +141,10 @@ class _Engine {
     events = LemonEngineEvents();
     RawKeyboard.instance.addListener(events.onKeyboardEvent);
     registerZoomCameraOnMouseScroll();
+
+    document.onFullscreenChange.listen((event) {
+       fullScreen.value = fullScreenActive;
+    });
   }
 
   void registerZoomCameraOnMouseScroll(){
