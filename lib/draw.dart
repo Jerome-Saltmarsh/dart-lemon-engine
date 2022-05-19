@@ -5,8 +5,6 @@ import 'package:flutter/cupertino.dart';
 import 'dart:ui' as ui;
 import 'engine.dart';
 
-final _defaultTextStyle = TextStyle();
-
 class LemonEngineDraw {
 
   void circle(double x, double y, double radius, Color color) {
@@ -16,12 +14,6 @@ class LemonEngineDraw {
   void circleOffset(Offset offset, double radius, Color color) {
     engine.paint.color = color;
     engine.canvas.drawCircle(offset, radius, engine.paint);
-  }
-
-  void text(String text, double x, double y, {Canvas? canvas, TextStyle? style}) {
-    engine.textPainter.text = TextSpan(style: style ?? _defaultTextStyle, text: text);
-    engine.textPainter.layout();
-    engine.textPainter.paint(canvas ?? engine.canvas, Offset(x, y));
   }
 
   void atlas(ui.Image image, List<RSTransform> transforms, List<Rect> rects){

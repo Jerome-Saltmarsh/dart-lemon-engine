@@ -145,6 +145,10 @@ class _Engine {
     document.onFullscreenChange.listen((event) {
        fullScreen.value = fullScreenActive;
     });
+    
+    loadImage('images/atlas.png').then((value) {
+      image = value;  
+    });
   }
 
   void registerZoomCameraOnMouseScroll(){
@@ -290,6 +294,12 @@ class _Engine {
         height: srcSize
     );
     renderAtlas();
+  }
+
+  void renderText(String text, double x, double y, {Canvas? canvas, TextStyle? style}) {
+    textPainter.text = TextSpan(style: style ?? const TextStyle(), text: text);
+    textPainter.layout();
+    textPainter.paint(canvas ?? this.canvas, Offset(x, y));
   }
 
   void renderCustomV2({
