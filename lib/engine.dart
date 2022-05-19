@@ -36,7 +36,7 @@ class _Engine {
   final draw = LemonEngineDraw();
   late final LemonEngineEvents events;
   var scrollSensitivity = 0.0005;
-  late ui.Image image;
+  late ui.Image atlas;
   var cameraSmoothFollow = true;
   var zoomSensitivity = 0.1;
   var targetZoom = 1.0;
@@ -81,6 +81,10 @@ class _Engine {
   final Map<String, TextSpan> textSpans = {
 
   };
+  
+  Future loadAtlas(String filename) async{
+      atlas = await loadImage(filename);
+  }
 
   void updateEngine(){
     const _padding = 48.0;
@@ -107,7 +111,6 @@ class _Engine {
     if (engine.drawCanvasAfterUpdate) {
       engine.redrawCanvas();
     }
-
   }
 
   TextSpan getTextSpan(String text){
@@ -145,10 +148,8 @@ class _Engine {
     document.onFullscreenChange.listen((event) {
        fullScreen.value = fullScreenActive;
     });
-    
-    loadImage('images/atlas.png').then((value) {
-      image = value;  
-    });
+
+    loadAtlas('images/atlas.png');
   }
 
   void registerZoomCameraOnMouseScroll(){
@@ -359,7 +360,7 @@ class _Engine {
     bufferIndex++;
     if (bufferIndex < buffers) return;
     bufferIndex = 0;
-    canvas.drawRawAtlas(image, dst, src, null, null, null, paint);
+    canvas.drawRawAtlas(atlas, dst, src, null, null, null, paint);
   }
 
   /// If there are draw jobs remaining in the buffer
@@ -376,7 +377,7 @@ class _Engine {
       dstFlush[1] = dst[j + 1]; // scale
       dstFlush[2] = dst[j + 2]; // scale
       dstFlush[3] = dst[j + 3]; // scale
-      canvas.drawRawAtlas(image, dstFlush, srcFlush, null, null, null, paint);
+      canvas.drawRawAtlas(atlas, dstFlush, srcFlush, null, null, null, paint);
     }
     bufferIndex = 0;
   }
