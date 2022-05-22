@@ -113,11 +113,26 @@ class _GameState extends State<Game> {
         }
       },
       onPointerDown: (PointerDownEvent event){
-        engine.mouseLeftDown.value = true;
+        print("onPointerDown(${event.buttons})");
+        if (event.buttons == 1){
+          engine.mouseLeftDown.value = true;
+          return;
+        }
+        if (event.buttons == 2){
+          engine.mouseRightDown.value = true;
+          return;
+        }
       },
       onPointerUp: (PointerUpEvent event){
-        engine.mouseLeftDown.value = false;
-        engine.mouseLeftDownFrames = 0;
+        print("onPointerUp(${event.buttons})");
+        if (engine.mouseLeftDown.value){
+          engine.mouseLeftDown.value = false;
+          return;
+        }
+        if (engine.mouseRightDown.value){
+          engine.mouseRightDown.value = false;
+          return;
+        }
       },
       onPointerHover:(PointerHoverEvent event){
         engine.previousMousePosition.x = engine.mousePosition.x;
@@ -138,11 +153,21 @@ class _GameState extends State<Game> {
         );
       },
       child: GestureDetector(
+          onTap: (){
+            engine.mouseLeftDown.value = false;
+          },
+          onTapUp: (details){
+            engine.mouseLeftDown.value = true;
+            engine.callbacks.onLeftClicked?.call();
+          },
+          onPanCancel: (){
+            engine.mouseLeftDown.value = false;
+          },
           onLongPress: (){
             engine.callbacks.onLongLeftClicked?.call();
           },
-          onTap: (){
-            engine.callbacks.onLeftClicked?.call();
+          onLongPressUp: (){
+            engine.mouseLeftDown.value = false;
           },
           onPanStart: (start) {
             engine.mouseDragging = true;

@@ -45,6 +45,7 @@ class _Engine {
   var previousMousePosition = Vector2(0, 0);
   var previousUpdateTime = DateTime.now();
   final mouseLeftDown = Watch(false);
+  final mouseRightDown = Watch(false);
   var mouseLeftDownFrames = 0;
   final Watch<int> fps = Watch(0);
   final Watch<Color> backgroundColor = Watch(Colors.white);
@@ -144,6 +145,11 @@ class _Engine {
     events = LemonEngineEvents();
     RawKeyboard.instance.addListener(events.onKeyboardEvent);
     registerZoomCameraOnMouseScroll();
+
+    mouseLeftDown.onChanged((bool leftDown) {
+      print("mouseLeftDown: $leftDown");
+       if (!leftDown) mouseLeftDownFrames = 0;
+    });
 
     document.onFullscreenChange.listen((event) {
        fullScreen.value = fullScreenActive;

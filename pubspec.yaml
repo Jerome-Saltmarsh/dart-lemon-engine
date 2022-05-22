@@ -1,6 +1,6 @@
 name: lemon_engine
 description: A simple loop and render library
-version: 0.3.06
+version: 0.3.07
 homepage: https://github.com/Jerome-Saltmarsh/dart-lemon-engine
 
 environment:
