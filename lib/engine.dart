@@ -147,8 +147,13 @@ class _Engine {
     registerZoomCameraOnMouseScroll();
 
     mouseLeftDown.onChanged((bool leftDown) {
-      print("mouseLeftDown: $leftDown");
        if (!leftDown) mouseLeftDownFrames = 0;
+    });
+    
+    mouseRightDown.onChanged((bool value) {
+      if (value) {
+        callbacks.onRightClicked?.call();
+      }
     });
 
     document.onFullscreenChange.listen((event) {

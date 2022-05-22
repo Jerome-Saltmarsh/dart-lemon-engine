@@ -113,7 +113,6 @@ class _GameState extends State<Game> {
         }
       },
       onPointerDown: (PointerDownEvent event){
-        print("onPointerDown(${event.buttons})");
         if (event.buttons == 1){
           engine.mouseLeftDown.value = true;
           return;
@@ -123,13 +122,12 @@ class _GameState extends State<Game> {
           return;
         }
       },
-      onPointerUp: (PointerUpEvent event){
-        print("onPointerUp(${event.buttons})");
-        if (engine.mouseLeftDown.value){
+      onPointerUp: (PointerUpEvent event) {
+        if (engine.mouseLeftDown.value) {
           engine.mouseLeftDown.value = false;
           return;
         }
-        if (engine.mouseRightDown.value){
+        if (engine.mouseRightDown.value) {
           engine.mouseRightDown.value = false;
           return;
         }
@@ -153,21 +151,8 @@ class _GameState extends State<Game> {
         );
       },
       child: GestureDetector(
-          onTap: (){
-            engine.mouseLeftDown.value = false;
-          },
-          onTapUp: (details){
-            engine.mouseLeftDown.value = true;
-            engine.callbacks.onLeftClicked?.call();
-          },
-          onPanCancel: (){
-            engine.mouseLeftDown.value = false;
-          },
           onLongPress: (){
             engine.callbacks.onLongLeftClicked?.call();
-          },
-          onLongPressUp: (){
-            engine.mouseLeftDown.value = false;
           },
           onPanStart: (start) {
             engine.mouseDragging = true;
@@ -178,12 +163,6 @@ class _GameState extends State<Game> {
           },
           onPanEnd: (value) {
             engine.mouseDragging = false;
-          },
-          onSecondaryTapDown: (_) {
-            engine.callbacks.onRightClicked?.call();
-          },
-          onSecondaryTapUp: (_) {
-            engine.callbacks.onRightClickReleased?.call();
           },
           child: WatchBuilder(engine.backgroundColor, (Color backgroundColor){
             return Container(
