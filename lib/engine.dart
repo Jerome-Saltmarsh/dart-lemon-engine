@@ -65,8 +65,8 @@ class _Engine {
   final drawForeground = Watch<DrawCanvas?>(null);
   Function? update;
   late Canvas canvas;
-  var animationFrame = 0;
-  var framesPerAnimationFrame = 5;
+  // var animationFrame = 0;
+  // var framesPerAnimationFrame = 5;
   
   var paint = Paint()
     ..color = Colors.white
@@ -98,9 +98,11 @@ class _Engine {
       engine.mouseLeftDownFrames++;
     }
 
-    if (engine.frame % engine.framesPerAnimationFrame == 0){
-      engine.animationFrame++;
-    }
+    
+
+    // if (engine.frame % engine.framesPerAnimationFrame == 0){
+    //   engine.animationFrame++;
+    // }
 
     engine.update?.call();
     final sX = screenCenterWorldX;
@@ -132,8 +134,7 @@ class _Engine {
   var keyReleasedHandlers = <LogicalKeyboardKey, Function>{};
 
   int get frame => drawFrame.value;
-  
-  
+
   _Engine(){
     WidgetsFlutterBinding.ensureInitialized();
     bufferSize = buffers * _indexesPerBuffer;
@@ -550,7 +551,7 @@ class _Screen {
     ;
   }
 
-  bool containsV(Vector2 value) {
+  bool containsV(Position value) {
     return
       value.x > left
           &&
