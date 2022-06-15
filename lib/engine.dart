@@ -15,6 +15,8 @@ import 'package:lemon_math/library.dart';
 import 'package:lemon_watch/watch.dart';
 import 'package:universal_html/html.dart';
 
+import 'render.dart';
+
 final _camera = engine.camera;
 final engine = _Engine();
 
@@ -22,16 +24,8 @@ class _Engine {
 
   static const _indexesPerBuffer = 4;
 
-  int bufferIndex = 0;
-  final int buffers = 400;
-  late int bufferSize;
-  late final Float32List src;
-  late final Float32List dst;
+
   late final Int32List colors;
-
-  late final srcFlush = Float32List(4);
-  late final dstFlush = Float32List(4);
-
   final callbacks = LemonEngineCallbacks();
   final draw = LemonEngineDraw();
   late final LemonEngineEvents events;
@@ -138,8 +132,6 @@ class _Engine {
   _Engine(){
     WidgetsFlutterBinding.ensureInitialized();
     bufferSize = buffers * _indexesPerBuffer;
-    src = Float32List(bufferSize);
-    dst = Float32List(bufferSize);
     colors = Int32List(buffers);
     paint.filterQuality = FilterQuality.none;
     paint.isAntiAlias = false;
