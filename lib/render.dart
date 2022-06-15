@@ -38,5 +38,9 @@ void render({
   dst[i + 2] = dstX + -scos * anchorX + ssin * (srcWidth * anchorY);
   dst[i + 3] = dstY + -ssin * anchorX - scos * (srcHeight * anchorY);
 
+  bufferIndex++;
+  if (bufferIndex < bufferSize) return;
+  bufferIndex = 0;
+
   engine.renderAtlas();
 }

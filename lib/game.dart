@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:lemon_engine/engine.dart';
 import 'package:lemon_watch/watch_builder.dart';
+import 'canvas.dart';
 import 'enums.dart';
 
 void _defaultDrawCanvasForeground(Canvas canvas, Size size) {
@@ -198,8 +199,8 @@ class _GamePainter extends CustomPainter {
       : super(repaint: repaint);
 
   @override
-  void paint(Canvas canvas, Size size) {
-    engine.canvas = canvas;
+  void paint(Canvas _canvas, Size size) {
+    canvas = _canvas;
     canvas.scale(engine.zoom, engine.zoom);
     canvas.translate(-_camera.x, -_camera.y);
     engine.drawCanvas.value?.call(canvas, size);
@@ -221,8 +222,8 @@ class _GameForegroundPainter extends CustomPainter {
       : super(repaint: repaint);
 
   @override
-  void paint(Canvas canvas, Size _size) {
-    engine.canvas = canvas;
+  void paint(Canvas _canvas, Size _size) {
+    canvas = canvas;
     canvas.scale(engine.zoom, engine.zoom);
     canvas.translate(-engine.camera.x, -engine.camera.y);
     engine.drawForeground.value?.call(canvas, _size);

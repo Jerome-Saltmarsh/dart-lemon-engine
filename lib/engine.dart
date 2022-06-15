@@ -14,6 +14,7 @@ import 'package:lemon_math/library.dart';
 import 'package:lemon_watch/watch.dart';
 import 'package:universal_html/html.dart';
 
+import 'canvas.dart';
 import 'render.dart';
 
 final _camera = engine.camera;
@@ -54,10 +55,7 @@ class _Engine {
   final drawCanvas = Watch<DrawCanvas?>(null);
   final drawForeground = Watch<DrawCanvas?>(null);
   Function? update;
-  late Canvas canvas;
-  // var animationFrame = 0;
-  // var framesPerAnimationFrame = 5;
-  
+
   var paint = Paint()
     ..color = Colors.white
     ..strokeCap = StrokeCap.round
@@ -159,16 +157,13 @@ class _Engine {
     colors[bufferIndex] = color.value;
   }
 
-  void renderText(String text, double x, double y, {Canvas? canvas, TextStyle? style}) {
+  void renderText(String text, double x, double y, {Canvas? other, TextStyle? style}) {
     textPainter.text = TextSpan(style: style ?? const TextStyle(), text: text);
     textPainter.layout();
-    textPainter.paint(canvas ?? this.canvas, Offset(x, y));
+    textPainter.paint(other ?? canvas, Offset(x, y));
   }
 
   void renderAtlas(){
-    bufferIndex++;
-    if (bufferIndex < bufferSize) return;
-    bufferIndex = 0;
     canvas.drawRawAtlas(atlas, dst, src, null, null, null, paint);
   }
 
