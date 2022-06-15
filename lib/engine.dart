@@ -1,7 +1,6 @@
 library lemon_engine;
 
 import 'dart:async';
-import 'dart:math';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
 
@@ -21,9 +20,6 @@ final _camera = engine.camera;
 final engine = _Engine();
 
 class _Engine {
-
-  static const _indexesPerBuffer = 4;
-
 
   late final Int32List colors;
   final callbacks = LemonEngineCallbacks();
@@ -131,7 +127,6 @@ class _Engine {
 
   _Engine(){
     WidgetsFlutterBinding.ensureInitialized();
-    bufferSize = buffers * _indexesPerBuffer;
     colors = Int32List(buffers);
     paint.filterQuality = FilterQuality.none;
     paint.isAntiAlias = false;
@@ -160,145 +155,8 @@ class _Engine {
     callbacks.onMouseScroll = events.onMouseScroll;
   }
 
-  void mapSrc8({
-    required double x,
-    required double y,
-  }){
-    final i = bufferIndex * _indexesPerBuffer;
-    src[i] = x;
-    src[i + 1] = y;
-    src[i + 2] = x + 8;
-    src[i + 3] = y + 8;
-  }
-
-  void mapSrcSquare({
-    required double x,
-    required double y,
-    required double size,
-  }){
-    final i = bufferIndex * _indexesPerBuffer;
-    src[i] = x;
-    src[i + 1] = y;
-    src[i + 2] = x + size;
-    src[i + 3] = y + size;
-  }
-
-  void mapSrc({
-    required double x,
-    required double y,
-    required double width,
-    required double height
-  }){
-    final i = bufferIndex * _indexesPerBuffer;
-    src[i] = x;
-    src[i + 1] = y;
-    src[i + 2] = x + width;
-    src[i + 3] = y + height;
-  }
-
-  void mapSrc48({
-    required double x,
-    required double y,
-  }){
-    final i = bufferIndex * _indexesPerBuffer;
-    src[i] = x;
-    src[i + 1] = y;
-    src[i + 2] = x + 48.0;
-    src[i + 3] = y + 48.0;
-  }
-
-  /// Prevents the stack from adding two variables each mapping
-  void mapSrc64({
-    required double x,
-    required double y,
-  }){
-    final i = bufferIndex * _indexesPerBuffer;
-    src[i] = x;
-    src[i + 1] = y;
-    src[i + 2] = x + 64.0;
-    src[i + 3] = y + 64.0;
-  }
-
-  void mapSrc32({
-    required double x,
-    required double y,
-  }){
-    final i = bufferIndex * _indexesPerBuffer;
-    src[i] = x;
-    src[i + 1] = y;
-    src[i + 2] = x + 32.0;
-    src[i + 3] = y + 32.0;
-  }
-
-  void mapSrc96({
-    required double x,
-    required double y,
-  }){
-    final i = bufferIndex * _indexesPerBuffer;
-    src[i] = x;
-    src[i + 1] = y;
-    src[i + 2] = x + 96.0;
-    src[i + 3] = y + 96.0;
-  }
-  
   void mapColor(Color color){
     colors[bufferIndex] = color.value;
-  }
-
-  void mapDst({
-    required double x,
-    required double y,
-    double scale = 1.0,
-    double rotation = 0,
-    double anchorX = 0,
-    double anchorY = 0,
-  }){
-    final scos = cos(rotation) * scale;
-    final ssin = sin(rotation) * scale;
-    final i = bufferIndex * _indexesPerBuffer;
-    dst[i] = scos;
-    dst[i + 1] = ssin;
-    dst[i + 2] = x + -scos * anchorX + ssin * anchorY;
-    dst[i + 3] = y + -ssin * anchorX - scos * anchorY;
-  }
-
-  void mapDstCheap({
-    required double x,
-    required double y,
-  }){
-    final i = bufferIndex * _indexesPerBuffer;
-    dst[i] = 1.0;
-    dst[i + 1] = 0;
-    dst[i + 2] = x;
-    dst[i + 3] = y;
-  }
-
-  void render({
-    required double dstX, 
-    required double dstY, 
-    required double srcX, 
-    required double srcY,
-    double srcSize = 64.0,
-    double scale = 1.0,
-    double rotation = 0.0,
-    double anchorX = 0.5,
-    double anchorY = 0.5,
-  }){
-    mapDst(
-        x: dstX, 
-        y: dstY, 
-        scale: scale, 
-        rotation: rotation, 
-        anchorX: srcSize * anchorX, 
-        anchorY: srcSize * anchorY
-    );
-    mapSrc(
-        x: srcX, 
-        y: srcY, 
-        width: srcSize, 
-        height: srcSize
-    );
-    renderAtlas();
   }
 
   void renderText(String text, double x, double y, {Canvas? canvas, TextStyle? style}) {
@@ -307,62 +165,9 @@ class _Engine {
     textPainter.paint(canvas ?? this.canvas, Offset(x, y));
   }
 
-  void renderCustomV2({
-    required Position dst,
-    required double srcX,
-    required double srcWidth,
-    required double srcHeight,
-    double srcY = 0,
-    double scale = 1.0,
-    double rotation = 0.0,
-    double anchorX = 0.5,
-    double anchorY = 0.5,
-  }){
-    renderCustom(
-        dstX: dst.x, 
-        dstY: dst.y, 
-        srcX: srcX,
-        srcY: srcY,
-        srcWidth: srcWidth, 
-        srcHeight: srcHeight,
-        anchorX: anchorX,
-        anchorY: anchorY,
-        scale: scale,
-    );
-  }
-
-  void renderCustom({
-    required double dstX,
-    required double dstY,
-    required double srcX,
-    required double srcWidth,
-    required double srcHeight,
-    double srcY = 0,
-    double scale = 1.0,
-    double rotation = 0.0,
-    double anchorX = 0.5,
-    double anchorY = 0.5,
-  }){
-    mapDst(
-        x: dstX,
-        y: dstY,
-        scale: scale,
-        rotation: rotation,
-        anchorX: srcWidth * anchorX,
-        anchorY: srcHeight * anchorY
-    );
-    mapSrc(
-        x: srcX,
-        y: srcY,
-        width: srcWidth,
-        height: srcHeight
-    );
-    renderAtlas();
-  }
-
   void renderAtlas(){
     bufferIndex++;
-    if (bufferIndex < buffers) return;
+    if (bufferIndex < bufferSize) return;
     bufferIndex = 0;
     canvas.drawRawAtlas(atlas, dst, src, null, null, null, paint);
   }

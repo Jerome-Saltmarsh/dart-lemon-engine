@@ -3,13 +3,13 @@ import 'dart:typed_data';
 
 import 'package:lemon_engine/engine.dart';
 
-int bufferIndex = 0;
-final int buffers = 400;
-late int bufferSize = 100;
-late final Float32List src = Float32List(bufferSize);
-late final Float32List dst = Float32List(bufferSize);
-late final srcFlush = Float32List(4);
-late final dstFlush = Float32List(4);
+var bufferIndex = 0;
+const bufferSize = 100;
+final buffers = bufferSize * 4;
+final src = Float32List(buffers);
+final dst = Float32List(buffers);
+final srcFlush = Float32List(4);
+final dstFlush = Float32List(4);
 
 void render({
   required double dstX,
@@ -18,10 +18,10 @@ void render({
   required double srcY,
   required double srcWidth,
   required double srcHeight,
-  double scale = 0.5,
+  double scale = 1.0,
   double rotation = 0,
-  double anchorX = 0,
-  double anchorY = 0,
+  double anchorX = 0.5,
+  double anchorY = 0.5,
 
 }){
   final i = bufferIndex * 4;
@@ -35,8 +35,8 @@ void render({
 
   dst[i] = scos;
   dst[i + 1] = ssin;
-  dst[i + 2] = dstX + -scos * anchorX + ssin * anchorY;
-  dst[i + 3] = dstY + -ssin * anchorX - scos * anchorY;
+  dst[i + 2] = dstX + -scos * anchorX + ssin * (srcWidth * anchorY);
+  dst[i + 3] = dstY + -ssin * anchorX - scos * (srcHeight * anchorY);
 
   engine.renderAtlas();
 }
