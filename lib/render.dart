@@ -24,22 +24,27 @@ void render({
   double anchorY = 0.5,
 
 }){
-  final i = bufferIndex * 4;
   final scos = cos(rotation) * scale;
   final ssin = sin(rotation) * scale;
 
-  src[i] = srcX;
-  src[i + 1] = srcY;
-  src[i + 2] = srcX + srcWidth;
-  src[i + 3] = srcY + srcHeight;
+  src[bufferIndex] = srcX;
+  dst[bufferIndex] = scos;
+  bufferIndex++;
 
-  dst[i] = scos;
-  dst[i + 1] = ssin;
-  dst[i + 2] = dstX + -scos * anchorX + ssin * (srcWidth * anchorY);
-  dst[i + 3] = dstY + -ssin * anchorX - scos * (srcHeight * anchorY);
+  src[bufferIndex] = srcY;
+  dst[bufferIndex] = ssin;
+  bufferIndex++;
+
+  src[bufferIndex] = srcX + srcWidth;
+  dst[bufferIndex] = dstX + -scos * anchorX + ssin * (srcWidth * anchorY);
 
   bufferIndex++;
-  if (bufferIndex < bufferSize) return;
+  src[bufferIndex] = srcY + srcHeight;
+  dst[bufferIndex] = dstY + -ssin * anchorX - scos * (srcHeight * anchorY);
+
+  bufferIndex++;
+
+  if (bufferIndex < buffers) return;
   bufferIndex = 0;
 
   engine.renderAtlas();
