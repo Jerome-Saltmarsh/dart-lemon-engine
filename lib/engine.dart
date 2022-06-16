@@ -170,17 +170,19 @@ class _Engine {
   /// If there are draw jobs remaining in the buffer
   /// it draws them and clears the rest
   void flushRenderBuffer(){
-    final end = bufferIndex;
-    for (var i = 0; i < end; i++) {
-      final j = i * 4;
-      srcFlush[0] = src[j];
-      srcFlush[1] = src[j + 1];
-      srcFlush[2] = src[j + 2];
-      srcFlush[3] = src[j + 3];
-      dstFlush[0] = dst[j]; // scale
-      dstFlush[1] = dst[j + 1]; // scale
-      dstFlush[2] = dst[j + 2]; // scale
-      dstFlush[3] = dst[j + 3]; // scale
+    for (var i = 0; i < bufferIndex;) {
+      srcFlush[0] = src[i];
+      dstFlush[0] = dst[i];
+      i++;
+      srcFlush[1] = src[i];
+      dstFlush[1] = dst[i]; // scale
+      i++;
+      srcFlush[2] = src[i];
+      srcFlush[2] = src[i];
+      i++;
+      dstFlush[3] = dst[i]; // scale
+      dstFlush[3] = dst[i]; // scale
+      i++;
       canvas.drawRawAtlas(atlas, dstFlush, srcFlush, null, null, null, paint);
     }
     bufferIndex = 0;
