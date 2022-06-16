@@ -178,9 +178,9 @@ class _Engine {
       dstFlush[1] = dst[i]; // scale
       i++;
       srcFlush[2] = src[i];
-      srcFlush[2] = src[i];
+      dstFlush[2] = dst[i];
       i++;
-      dstFlush[3] = dst[i]; // scale
+      srcFlush[3] = src[i]; // scale
       dstFlush[3] = dst[i]; // scale
       i++;
       canvas.drawRawAtlas(atlas, dstFlush, srcFlush, null, null, null, paint);
