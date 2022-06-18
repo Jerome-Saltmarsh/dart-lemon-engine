@@ -18,7 +18,7 @@ void renderR({
   required double srcY,
   required double srcWidth,
   required double srcHeight,
-  required double rotation = 0,
+  required double rotation,
   double scale = 1.0,
   double anchorX = 0.5,
   double anchorY = 0.5,
