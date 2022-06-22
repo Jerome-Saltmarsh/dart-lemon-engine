@@ -1,6 +1,9 @@
 import 'package:lemon_math/functions/vector2.dart';
 import 'package:flutter/services.dart';
 
+
+Function? onLeftClicked;
+
 class LemonEngineCallbacks {
   Function? onMouseDragging;
   Function? onLeftClicked;

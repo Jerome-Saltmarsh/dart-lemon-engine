@@ -22,7 +22,6 @@ final engine = _Engine();
 
 class _Engine {
 
-  late final Int32List colors;
   final callbacks = LemonEngineCallbacks();
   final draw = LemonEngineDraw();
   late final LemonEngineEvents events;
@@ -31,11 +30,18 @@ class _Engine {
   var cameraSmoothFollow = true;
   var zoomSensitivity = 0.1;
   var targetZoom = 1.0;
+
   final Map<LogicalKeyboardKey, int> keyboardState = {};
   var mousePosition = Vector2(0, 0);
   var previousMousePosition = Vector2(0, 0);
   var previousUpdateTime = DateTime.now();
-  final mouseLeftDown = Watch(false);
+  final mouseLeftDown = Watch(false, onChanged: (bool value){
+    if (value){
+      if (onLeftClicked != null){
+        onLeftClicked!();
+      }
+    }
+  });
   final mouseRightDown = Watch(false);
   var mouseLeftDownFrames = 0;
   final Watch<int> fps = Watch(0);
@@ -125,7 +131,6 @@ class _Engine {
 
   _Engine(){
     WidgetsFlutterBinding.ensureInitialized();
-    colors = Int32List(buffers);
     paint.filterQuality = FilterQuality.none;
     paint.isAntiAlias = false;
     events = LemonEngineEvents();
@@ -164,7 +169,7 @@ class _Engine {
   }
 
   void renderAtlas(){
-    canvas.drawRawAtlas(atlas, dst, src, null, null, null, paint);
+    canvas.drawRawAtlas(atlas, dst, src, colors, renderBlendMode, null, paint);
   }
 
   /// If there are draw jobs remaining in the buffer
@@ -219,8 +224,10 @@ class _Engine {
     final previousY = screenToWorldY(previousMousePosition.y);
     final diffX = previousX - positionX;
     final diffY = previousY - positionY;
-    camera.x += diffX * zoom;
-    camera.y += diffY * zoom;
+    // camera.x += diffX * zoom;
+    // camera.y += diffY * zoom;
+    camera.x += diffX;
+    camera.y += diffY;
   }
 
   void fullScreenEnter() {

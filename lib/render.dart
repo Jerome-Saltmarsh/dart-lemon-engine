@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:flutter/cupertino.dart';
 import 'package:lemon_engine/engine.dart';
 
 var bufferIndex = 0;
@@ -8,8 +9,11 @@ const bufferSize = 100;
 final buffers = bufferSize * 4;
 final src = Float32List(buffers);
 final dst = Float32List(buffers);
+final colors = Int32List(bufferSize);
 final srcFlush = Float32List(4);
 final dstFlush = Float32List(4);
+var renderBlendMode = BlendMode.dstATop;
+var renderColor = 0;
 
 void renderR({
   required double dstX,
@@ -66,12 +70,14 @@ void render({
   double scale = 1.0,
   double anchorX = 0.5,
   double anchorY = 0.5,
+  int color = 0,
 }){
   final scos = cos0 * scale;
   final ssin = sin0 * scale;
 
   src[bufferIndex] = srcX;
   dst[bufferIndex] = scos;
+  colors[bufferIndex ~/ 4] = color;
   bufferIndex++;
 
   src[bufferIndex] = srcY;
