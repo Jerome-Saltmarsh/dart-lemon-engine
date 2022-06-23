@@ -176,6 +176,7 @@ class _Engine {
   /// it draws them and clears the rest
   void flushRenderBuffer(){
     for (var i = 0; i < bufferIndex;) {
+      colorsFlush[0] = colors[i ~/ 4];
       srcFlush[0] = src[i];
       dstFlush[0] = dst[i];
       i++;
@@ -188,7 +189,7 @@ class _Engine {
       srcFlush[3] = src[i]; // scale
       dstFlush[3] = dst[i]; // scale
       i++;
-      canvas.drawRawAtlas(atlas, dstFlush, srcFlush, null, null, null, paint);
+      canvas.drawRawAtlas(atlas, dstFlush, srcFlush, colorsFlush, renderBlendMode, null, paint);
     }
     bufferIndex = 0;
   }

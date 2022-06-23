@@ -12,8 +12,8 @@ final dst = Float32List(buffers);
 final colors = Int32List(bufferSize);
 final srcFlush = Float32List(4);
 final dstFlush = Float32List(4);
+final colorsFlush = Int32List(1);
 var renderBlendMode = BlendMode.dstATop;
-var renderColor = 0;
 
 void renderR({
   required double dstX,
