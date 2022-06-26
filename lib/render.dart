@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:lemon_engine/engine.dart';
 
 var bufferIndex = 0;
+var renderIndex = 0;
 const bufferSize = 100;
 final buffers = bufferSize * 4;
 final src = Float32List(buffers);
@@ -40,18 +41,18 @@ void renderR({
   bufferIndex++;
 
   src[bufferIndex] = srcX + srcWidth;
-  // dst[bufferIndex] = dstX + -scos * anchorX + ssin * (srcWidth * anchorX);
   dst[bufferIndex] = dstX - (srcWidth * anchorX * scale);
 
   bufferIndex++;
   src[bufferIndex] = srcY + srcHeight;
-  // dst[bufferIndex] = dstY + -ssin * anchorY - scos * (srcHeight * anchorY);
   dst[bufferIndex] = dstY - (srcHeight * anchorY * scale);
 
   bufferIndex++;
+  renderIndex++;
 
   if (bufferIndex < buffers) return;
   bufferIndex = 0;
+  renderIndex = 0;
 
   engine.renderAtlas();
 }
@@ -77,7 +78,7 @@ void render({
 
   src[bufferIndex] = srcX;
   dst[bufferIndex] = scos;
-  colors[bufferIndex ~/ 4] = color;
+  colors[renderIndex] = color;
   bufferIndex++;
 
   src[bufferIndex] = srcY;
@@ -92,9 +93,11 @@ void render({
   dst[bufferIndex] = dstY - (srcHeight * anchorY * scale);
 
   bufferIndex++;
+  renderIndex++;
 
   if (bufferIndex < buffers) return;
   bufferIndex = 0;
+  renderIndex = 0;
 
   engine.renderAtlas();
 }

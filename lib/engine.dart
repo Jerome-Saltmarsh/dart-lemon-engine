@@ -192,6 +192,7 @@ class _Engine {
       canvas.drawRawAtlas(atlas, dstFlush, srcFlush, colorsFlush, renderBlendMode, null, paint);
     }
     bufferIndex = 0;
+    renderIndex = 0;
   }
 
   void cameraFollow(double x, double y, double speed){
