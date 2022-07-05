@@ -14,6 +14,7 @@ import 'package:lemon_math/library.dart';
 import 'package:lemon_watch/watch.dart';
 import 'package:universal_html/html.dart';
 
+import 'actions.dart';
 import 'canvas.dart';
 import 'render.dart';
 
@@ -230,10 +231,6 @@ class _Engine {
     // camera.y += diffY * zoom;
     camera.x += diffX;
     camera.y += diffY;
-  }
-
-  void fullScreenEnter() {
-    document.documentElement!.requestFullscreen();
   }
 
   void disableRightClickContextMenu() {

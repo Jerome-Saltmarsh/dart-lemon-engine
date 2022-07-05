@@ -16,6 +16,10 @@ final dstFlush = Float32List(4);
 final colorsFlush = Int32List(1);
 var renderBlendMode = BlendMode.dstATop;
 
+void setRenderBlendMode(BlendMode value){
+  renderBlendMode = value;
+}
+
 void renderR({
   required double dstX,
   required double dstY,
