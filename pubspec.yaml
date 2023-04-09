@@ -1,10 +1,10 @@
 name: lemon_engine
-description: A simple loop and render library
-version: 0.3.20
+description: build canvas games for the web
+version: 0.3.23
 homepage: https://github.com/Jerome-Saltmarsh/dart-lemon-engine
 
 environment:
-  sdk: '>=2.14.3 <3.0.0'
+  sdk: ">=2.17.5 <3.0.0"
 
 dependencies:
   flutter:
@@ -14,4 +14,6 @@ dependencies:
   lemon_math:
       path: C:\Users\Jerome\github\dart-lemon-math
   universal_html: ^2.0.8
+  url_strategy: ^0.2.0
+  shared_preferences: ^2.0.11
 
