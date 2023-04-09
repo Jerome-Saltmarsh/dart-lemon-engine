@@ -306,8 +306,8 @@ class Engine {
   }
 
   static void run({
-    required Function? update,
-    required DrawCanvas? onDrawCanvas,
+    required Function update,
+    required DrawCanvas render,
     WidgetBuilder? buildUI,
     String title = Default_Title,
     Function(SharedPreferences sharedPreferences)? init,
@@ -338,12 +338,12 @@ class Engine {
     Engine.onUpdate = update;
     Engine.watchBuildUI.value = buildUI;
     Engine.onBuildLoadingScreen = buildLoadingScreen;
-    Engine.onDrawCanvas = onDrawCanvas;
+    Engine.onDrawCanvas = render;
     Engine.onTapDown = onTapDown;
     Engine.onLongPress = onLongPress;
     Engine.onScreenSizeChanged = onScreenSizeChanged;
     Engine.onDispose = onDispose;
-    Engine.onDrawCanvas = onDrawCanvas;
+    Engine.onDrawCanvas = render;
     Engine.onDrawForeground = onDrawForeground;
     Engine.onLeftClicked = onLeftClicked;
     Engine.onPointerScrolled = onPointerScrolled;
