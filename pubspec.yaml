@@ -1,6 +1,6 @@
 name: lemon_engine
 description: build canvas games for the web
-version: 0.3.23
+version: 0.3.26
 homepage: https://github.com/Jerome-Saltmarsh/dart-lemon-engine
 
 environment:
@@ -9,10 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  lemon_watch:
-      path: C:\Users\Jerome\github\dart-lemon-watch
-  lemon_math:
-      path: C:\Users\Jerome\github\dart-lemon-math
+  lemon_watch: ^1.1.0
+  lemon_math: ^1.2.13
   universal_html: ^2.0.8
   url_strategy: ^0.2.0
   shared_preferences: ^2.0.11

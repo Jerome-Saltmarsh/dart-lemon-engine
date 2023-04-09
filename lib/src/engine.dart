@@ -57,12 +57,6 @@ class Engine {
   /// override safe
   static GestureLongPressDownCallback? onLongPressDown;
   /// override safe
-  static GestureDragStartCallback? onPanStart;
-  /// override safe
-  static GestureDragUpdateCallback? onPanUpdate;
-  /// override safe
-  static GestureDragEndCallback? onPanEnd;
-  /// override safe
   static GestureTapDownCallback? onSecondaryTapDown;
   /// override safe
   static CallbackOnScreenSizeChanged? onScreenSizeChanged;
@@ -93,18 +87,6 @@ class Engine {
   static Function? onUpdateTimerReset;
   /// override safe
   static BasicWidgetBuilder? onBuildLoadingScreen;
-  /// ___Engine.callbackOnJoystickStart gets called once before___ <br/>
-  /// Engine.callbackOnJoystickChanged gets called whenever the user moves the joystick <br/>
-  /// Engine.callbackOnJoystickStart gets called once the user releases the joystick <br/>
-  static Function? callbackOnJoystickStart;
-  /// Engine.callbackOnJoystickStart gets called once before
-  /// Engine.callbackOnJoystickChanged gets called whenever the user moves the joystick [THIS]
-  /// Engine.callbackOnJoystickStart gets called once the user releases the joystick
-  static CallbackOnJoystickEngaged? callbackOnJoystickChanged;
-  /// Engine.callbackOnJoystickStart gets called once before
-  /// Engine.callbackOnJoystickChanged gets called whenever the user moves the joystick
-  /// Engine.callbackOnJoystickStart gets called once the user releases the joystick [THIS]
-  static Function? callbackOnJoystickEnd;
   /// override safe
   static Function(Object error, StackTrace stack)? onError;
 
@@ -150,7 +132,6 @@ class Engine {
   static var mouseLeftDownFrames = 0;
   static var zoom = 1.0;
   static var drawCanvasAfterUpdate = true;
-  static var panStarted = false;
   static late BuildContext buildContext;
   static late final sharedPreferences;
   static final keyboardState = <LogicalKeyboardKey, int>{};
@@ -168,13 +149,6 @@ class Engine {
   static void Function(int keyCode)? onKeyPressed;
   /// triggered upon key release
   static void Function(int keyCode)? onKeyUp;
-
-  static var joystickBaseX = 0.0;
-  static var joystickBaseY = 0.0;
-  static var joystickEndX = 0.0;
-  static var joystickEndY = 0.0;
-  static var joystickEngaged = false;
-  static var joystickMaxDistance = 25.0;
 
   // SETTERS
   static set bufferImage(ui.Image image){
@@ -195,8 +169,6 @@ class Engine {
 
   // GETTERS
   static BlendMode get bufferBlendMode => _bufferBlendMode;
-  static double get joystickDistance => Engine.calculateDistance(joystickBaseX, joystickBaseY, joystickEndX, joystickEndY);
-  static double get joystickAngle => Engine.calculateAngleBetween(joystickBaseX, joystickBaseY, joystickEndX, joystickEndY);
   static double get screenCenterRenderX => (Screen_Left + Screen_Right) * 0.5;
   static double get screenCenterRenderY => (Screen_Top + Screen_Bottom) * 0.5;
   static double get screenDiagonalLength => calculateHypotenuse(screen.width, screen.height);
@@ -307,9 +279,9 @@ class Engine {
       deviceType.value =
       deviceIsComputer ? DeviceType.Phone : DeviceType.Computer;
 
-  static Future loadBufferImage(String filename) async {
-    _bufferImage = await loadImageAsset(filename);
-  }
+  // static Future loadBufferImage(String filename) async {
+  //   _bufferImage = await loadImageAsset(filename);
+  // }
 
   static Future<ui.Image> loadImageAsset(String url) async {
     final byteData = await rootBundle.load(url);
@@ -334,12 +306,12 @@ class Engine {
   }
 
   static void run({
+    required Function? update,
+    required DrawCanvas? onDrawCanvas,
+    WidgetBuilder? buildUI,
     String title = Default_Title,
     Function(SharedPreferences sharedPreferences)? init,
-    Function? update,
-    WidgetBuilder? buildUI,
     BasicWidgetBuilder? buildLoadingScreen,
-    DrawCanvas? onDrawCanvas,
     ThemeData? themeData,
     GestureTapDownCallback? onTapDown,
     GestureLongPressCallback? onLongPress,
@@ -369,9 +341,6 @@ class Engine {
     Engine.onDrawCanvas = onDrawCanvas;
     Engine.onTapDown = onTapDown;
     Engine.onLongPress = onLongPress;
-    Engine.onPanStart = onPanStart;
-    Engine.onPanUpdate = onPanUpdate;
-    Engine.onPanEnd = onPanEnd;
     Engine.onScreenSizeChanged = onScreenSizeChanged;
     Engine.onDispose = onDispose;
     Engine.onDrawCanvas = onDrawCanvas;
@@ -532,30 +501,6 @@ class Engine {
     }
   }
 
-  static void _internalOnPanStart(DragStartDetails details){
-    panStarted = true;
-    joystickEngaged = true;
-    joystickBaseX = details.globalPosition.dx;
-    joystickBaseY = details.globalPosition.dy;
-    joystickEndX = joystickBaseX;
-    joystickEndY = joystickBaseY;
-    onPanStart?.call(details);
-    callbackOnJoystickStart?.call();
-  }
-
-  static void _internalOnPanUpdate(DragUpdateDetails details){
-    joystickEndX = details.globalPosition.dx;
-    joystickEndY = details.globalPosition.dy;
-
-    if (joystickDistance > joystickMaxDistance){
-      final angle = joystickAngle;
-      joystickBaseX = joystickEndX + Engine.calculateAdjacent(angle, joystickMaxDistance);
-      joystickBaseY = joystickEndY + Engine.calculateOpposite(angle, joystickMaxDistance);
-    }
-    onPanUpdate?.call(details);
-    callbackOnJoystickChanged?.call(joystickAngle, joystickDistance);
-  }
-
   static void _internalOnTapDown(TapDownDetails details){
      onTapDown?.call(details);
   }
@@ -586,13 +531,6 @@ class Engine {
 
   static void _internalOnLongPressDown(LongPressDownDetails details){
     onLongPressDown?.call(details);
-  }
-
-  static void _internalOnPanEnd(DragEndDetails details){
-    panStarted = false;
-    joystickEngaged = false;
-    onPanEnd?.call(details);
-    callbackOnJoystickEnd?.call();
   }
 
   static void _internalOnSecondaryTapDown(TapDownDetails details){
@@ -629,7 +567,7 @@ class Engine {
 
     SystemChannels.keyEvent.setMessageHandler(_handleRawKeyMessage);
     runApp(_internalBuildApp());
-
+    _bufferImage = await _generateEmptyImage();
     paint.filterQuality = FilterQuality.none;
     paint.isAntiAlias = false;
 
@@ -641,7 +579,6 @@ class Engine {
 
     document.addEventListener('fullscreenchange', _internalOnFullScreenChanged);
 
-    loadBufferImage('images/atlas.png');
     disableRightClickContextMenu();
     paint.isAntiAlias = false;
     Engine.sharedPreferences = await SharedPreferences.getInstance();
@@ -1326,19 +1263,19 @@ class Engine {
     return text.substring(index + 1, text.length).replaceAll("_", " ");
   }
 
-  static void canvasRenderJoystick(Canvas canvas){
-    final base = Offset(joystickBaseX, joystickBaseY);
-    final end = Offset(joystickEndX, joystickEndY);
-    canvas.drawCircle(base, 20, Engine.paint);
-    canvas.drawCircle(end, 10, Engine.paint);
-    canvas.drawLine(base, end, Engine.paint);
-  }
-
   static void incrementBufferIndex(){
     Engine.bufferIndex++;
     if (Engine.bufferIndex == 128) {
       Engine.flushAll();
     }
+  }
+
+  static Future<ui.Image> _generateEmptyImage() async {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    canvas.drawRect(Rect.fromLTWH(0, 0, 1, 1), Paint());
+    final picture = recorder.endRecording();
+    return await picture.toImage(1, 1);
   }
 
   static Widget buildAtlasImageButton({
