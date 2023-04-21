@@ -65,8 +65,6 @@ class Engine {
   /// override safe
   static DrawCanvas? onDrawCanvas;
   /// override safe
-  static DrawCanvas? onDrawCanvasForeground;
-  /// override safe
   static DrawCanvas? onDrawForeground;
   /// override safe
   static Function? onLeftClicked;
