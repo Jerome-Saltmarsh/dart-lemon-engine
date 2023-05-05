@@ -275,12 +275,13 @@ class Engine {
     CallbackOnScreenSizeChanged? onScreenSizeChanged,
     Function? onDispose,
     DrawCanvas? onDrawForeground,
-    Function? onKeyPressedSpace,
     Function? onLeftClicked,
-    Function? onLongLeftClicked,
-    Function(double value)? onMouseScroll,
     Function? onRightClicked,
     Function? onRightClickReleased,
+    Function(int keyCode)? onKeyPressed,
+    Function(int keyCode)? onKeyDown,
+    Function(int keyCode)? onKeyUp,
+    Function(PointerScrollEvent value)? onMouseScroll,
     Function(SharedPreferences sharedPreferences)? onInit,
     Function(Object error, StackTrace stack)? onError,
     bool setPathUrlStrategy = true,
@@ -300,7 +301,10 @@ class Engine {
     Engine.onDrawCanvas = render;
     Engine.onDrawForeground = onDrawForeground;
     Engine.onLeftClicked = onLeftClicked;
-    Engine.onPointerScrolled = onPointerScrolled;
+    Engine.onKeyPressed = onKeyPressed;
+    Engine.onKeyDown = onKeyDown;
+    Engine.onKeyUp = onKeyUp;
+    Engine.onPointerScrolled = onMouseScroll;
     Engine.onRightClicked = onRightClicked;
     Engine.onRightClickReleased = onRightClickReleased;
     Engine.themeData.value = themeData;
