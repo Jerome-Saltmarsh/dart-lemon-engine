@@ -91,19 +91,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.5"
-  lemon_math:
-    dependency: "direct main"
-    description:
-      path: "C:\\Users\\Jerome\\github\\dart-lemon-math"
-      relative: false
-    source: path
-    version: "1.2.12"
   lemon_watch:
     dependency: "direct main"
     description:
-      path: "C:\\Users\\Jerome\\github\\dart-lemon-watch"
-      relative: false
-    source: path
+      name: lemon_watch
+      sha256: "7217253fd45582a240ce5f46d4ee6d2c82b8a3ca5f53cebf9d2c549a2a5e556b"
+      url: "https://pub.dev"
+    source: hosted
     version: "1.1.0"
   material_color_utilities:
     dependency: transitive

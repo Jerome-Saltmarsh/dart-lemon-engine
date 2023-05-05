@@ -1,8 +1,8 @@
 library lemon_engine;
 import 'dart:convert';
 
+import 'package:lemon_engine/src/math.dart';
 import 'package:universal_html/html.dart';
-
 
 import 'dart:async';
 import 'dart:math';
@@ -14,37 +14,13 @@ import 'keycode.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lemon_math/src.dart';
+// import 'package:lemon_math/src.dart';
 import 'package:lemon_watch/src.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_strategy/url_strategy.dart' as us;
 
-/// boilerplate code for game development
-///
-///
-/// __event-hooks__
-///
-/// event hooks start with the word 'on'
-///
-/// event hooks are safe to override
-///
-/// event hooks can be overridden during runtime
-///
-/// ```dart
-/// Engine.onLeftClicked = () => print("left mouse clicked');
-/// ```
-///
-/// __getting started__
-/// ```dart
-///void main() {
-///   Engine.run(
-///     title: "My Game Name",
-///     buildUI: (BuildContext context) => Text("Welcome"),
-///     backgroundColor: Colors.red,
-///   );
-/// }
-/// ```
 class Engine {
+
   // HOOKS
   /// the following hooks are designed to be easily swapped in and out without inheritance
   /// override safe. run this snippet inside your initialization code.
@@ -125,8 +101,10 @@ class Engine {
   static var zoomSensitivity = 0.175;
   static var targetZoom = 1.0;
   static var zoomOnScroll = true;
-  static var mousePosition = Vector2(0, 0);
-  static var previousMousePosition = Vector2(0, 0);
+  static var mousePositionX = 0.0;
+  static var mousePositionY = 0.0;
+  static var previousMousePositionX = 0.0;
+  static var previousMousePositionY = 0.0;
   static var mouseLeftDownFrames = 0;
   static var zoom = 1.0;
   static var drawCanvasAfterUpdate = true;
@@ -140,7 +118,8 @@ class Engine {
   static final notifierPaintFrame = ValueNotifier<int>(0);
   static final notifierPaintForeground = ValueNotifier<int>(0);
   static final screen = _Screen();
-  static final camera = Vector2(0, 0);
+  static var cameraX = 0.0;
+  static var cameraY = 0.0;
   /// triggered if the state of the key is down
   static void Function(int keyCode)? onKeyDown;
   /// triggered the first moment the key is pressed down
@@ -169,7 +148,7 @@ class Engine {
   static BlendMode get bufferBlendMode => _bufferBlendMode;
   static double get screenCenterRenderX => (Screen_Left + Screen_Right) * 0.5;
   static double get screenCenterRenderY => (Screen_Top + Screen_Bottom) * 0.5;
-  static double get screenDiagonalLength => calculateHypotenuse(screen.width, screen.height);
+  static double get screenDiagonalLength => hyp(screen.width, screen.height);
   static double get screenArea => screen.width * screen.height;
   static WidgetBuilder? get buildUI => watchBuildUI.value;
   static String get title => watchTitle.value;
@@ -225,25 +204,6 @@ class Engine {
   static int getKeyDownDuration(int key) =>
     keyStateDuration[key] ?? 0;
 
-  // static void _internalOnKeyboardEvent(RawKeyEvent event) {
-  //   if (event is RawKeyDownEvent) {
-  //     if (keyState[event.logicalKey] ?? false) {
-  //       keyStateDuration[event.logicalKey] = getKeyDownDuration(event.logicalKey) + 1;
-  //       onKeyHeld?.call(event, getKeyDownDuration(event.logicalKey));
-  //     } else {
-  //       keyState[event.logicalKey] = true;
-  //       onKeyPressed?.call(event);
-  //     }
-  //     onKeyDown?.call(event);
-  //     return;
-  //   }
-  //   if (event is RawKeyUpEvent) {
-  //     keyState[event.logicalKey] = false;
-  //     onKeyUp?.call(event);
-  //     return;
-  //   }
-  // }
-
   static void _internalOnChangedMouseLeftDown(bool value){
     if (value) {
       onLeftClicked?.call();
@@ -276,10 +236,6 @@ class Engine {
   static void toggleDeviceType() =>
       deviceType.value =
       deviceIsComputer ? DeviceType.Phone : DeviceType.Computer;
-
-  // static Future loadBufferImage(String filename) async {
-  //   _bufferImage = await loadImageAsset(filename);
-  // }
 
   static Future<ui.Image> loadImageAsset(String url) async {
     final byteData = await rootBundle.load(url);
@@ -391,13 +347,13 @@ class Engine {
   static void cameraFollow(double x, double y, double speed) {
     final diffX = screenCenterWorldX - x;
     final diffY = screenCenterWorldY - y;
-    camera.x -= (diffX * 75) * speed;
-    camera.y -= (diffY * 75) * speed;
+    cameraX -= (diffX * 75) * speed;
+    cameraY -= (diffY * 75) * speed;
   }
 
   static void cameraCenter(double x, double y) {
-    camera.x = x - (screenCenterX / zoom);
-    camera.y = y - (screenCenterY / zoom);
+    cameraX = x - (screenCenterX / zoom);
+    cameraY = y - (screenCenterY / zoom);
   }
 
   static void redrawCanvas() {
@@ -430,14 +386,14 @@ class Engine {
   }
 
   static void panCamera() {
-    final positionX = screenToWorldX(mousePosition.x);
-    final positionY = screenToWorldY(mousePosition.y);
-    final previousX = screenToWorldX(previousMousePosition.x);
-    final previousY = screenToWorldY(previousMousePosition.y);
+    final positionX = screenToWorldX(mousePositionX);
+    final positionY = screenToWorldY(mousePositionY);
+    final previousX = screenToWorldX(previousMousePositionX);
+    final previousY = screenToWorldY(previousMousePositionY);
     final diffX = previousX - positionX;
     final diffY = previousY - positionY;
-    camera.x += diffX;
-    camera.y += diffY;
+    cameraX += diffX;
+    cameraY += diffY;
   }
 
   static void disableRightClickContextMenu() {
@@ -458,17 +414,17 @@ class Engine {
   }
 
   static void _internalOnPointerMove(PointerMoveEvent event) {
-    previousMousePosition.x = mousePosition.x;
-    previousMousePosition.y = mousePosition.y;
-    mousePosition.x = event.position.dx;
-    mousePosition.y = event.position.dy;
+    previousMousePositionX = mousePositionX;
+    previousMousePositionY = mousePositionY;
+    mousePositionX = event.position.dx;
+    mousePositionY = event.position.dy;
   }
 
   static void _internalOnPointerHover(PointerHoverEvent event) {
-    previousMousePosition.x = mousePosition.x;
-    previousMousePosition.y = mousePosition.y;
-    mousePosition.x = event.position.dx;
-    mousePosition.y = event.position.dy;
+    previousMousePositionX = mousePositionX;
+    previousMousePositionY = mousePositionY;
+    mousePositionX = event.position.dx;
+    mousePositionY = event.position.dy;
     touchHeldId = event.pointer;
   }
 
@@ -538,7 +494,7 @@ class Engine {
   static void _internalPaint(Canvas canvas, Size size) {
     Engine.canvas = canvas;
     canvas.scale(zoom, zoom);
-    canvas.translate(-camera.x, -camera.y);
+    canvas.translate(-cameraX, -cameraY);
     if (!initialized) return;
     if (onDrawCanvas == null) return;
     batchesRendered = 0;
@@ -604,10 +560,10 @@ class Engine {
   }
 
   static void _internalOnUpdate(Timer timer){
-    Screen_Left = camera.x;
-    Screen_Right = camera.x + (screen.width / zoom);
-    Screen_Top = camera.y;
-    Screen_Bottom = camera.y + (screen.height / zoom);
+    Screen_Left = cameraX;
+    Screen_Right = cameraX + (screen.width / zoom);
+    Screen_Top = cameraY;
+    Screen_Bottom = cameraY + (screen.height / zoom);
     if (watchMouseLeftDown.value) {
       mouseLeftDownFrames++;
     }
@@ -892,11 +848,13 @@ class Engine {
     final scaledHeight = srcHeight * scale * anchorY;
     final scaledWidth = srcWidth * scale * anchorX;
 
-    final adjX = getAdjacent(rotation - piHalf, scaledHeight);
-    final adjY = getOpposite(rotation - piHalf, scaledHeight);
+    const piHalf = pi * 0.5;
 
-    final adjY2 = getAdjacent(rotation - piHalf, scaledWidth);
-    final adjX2 = getOpposite(rotation - piHalf, scaledWidth);
+    final adjX = adj(rotation - piHalf, scaledHeight);
+    final adjY = opp(rotation - piHalf, scaledHeight);
+
+    final adjY2 = adj(rotation - piHalf, scaledWidth);
+    final adjX2 = opp(rotation - piHalf, scaledWidth);
 
     bufferImage = image;
     final f = bufferIndex << 2;
@@ -1070,32 +1028,6 @@ class Engine {
     );
   }
 
-  static double calculateDistance(double x1, double y1, double x2, double y2) =>
-      calculateHypotenuse(x1 - x2, y1 - y2);
-
-  static double calculateHypotenuse(num adjacent, num opposite) =>
-     sqrt((adjacent * adjacent) + (opposite * opposite));
-
-  static double calculateAngle(double adjacent, double opposite) {
-    final angle = atan2(opposite, adjacent);
-    return angle < 0 ? PI_2 + angle : angle;
-  }
-
-  static double calculateAngleBetween(double x1, double y1, double x2, double y2) {
-    return calculateAngle(x1 - x2, y1 - y2);
-  }
-
-  static double calculateAdjacent(double radians, double magnitude) =>
-    cos(radians) * magnitude;
-
-  static double calculateOpposite(double radians, double magnitude) =>
-    sin(radians) * magnitude;
-
-  static T clamp<T extends num>(T value, T min, T max) {
-    if (value < min) return min;
-    if (value > max) return max;
-    return value;
-  }
 
   static void insertionSort<E>(List<E> list, {
     required bool Function(E, E) compare,
@@ -1139,7 +1071,10 @@ class Engine {
   static int randomInt(int min, int max) => random.nextInt(max - min) + min;
 
   /// Returns a random radian between 0 and pi2
-  static double randomAngle() => random.nextDouble() * pi2;
+  static double randomAngle() {
+    const pi2 = pi + pi;
+    return random.nextDouble() * pi2;
+  }
 
   static T randomItem<T>(List<T> list) => list[random.nextInt(list.length)];
 
@@ -1173,26 +1108,26 @@ class Engine {
   static bool get fullScreenActive => document.fullscreenElement != null;
 
   static double screenToWorldX(double value)  =>
-    camera.x + value / zoom;
+    cameraX + value / zoom;
 
   static double screenToWorldY(double value) =>
-    camera.y + value / zoom;
+    cameraY + value / zoom;
 
   static double worldToScreenX(double x) =>
-    zoom * (x - camera.x);
+    zoom * (x - cameraX);
 
   static double worldToScreenY(double y) =>
-    zoom * (y - camera.y);
+    zoom * (y - cameraY);
 
   static double get screenCenterX => screen.width * 0.5;
   static double get screenCenterY => screen.height * 0.5;
   static double get screenCenterWorldX => screenToWorldX(screenCenterX);
   static double get screenCenterWorldY => screenToWorldY(screenCenterY);
-  static double get mouseWorldX => screenToWorldX(mousePosition.x);
-  static double get mouseWorldY => screenToWorldY(mousePosition.y);
+  static double get mouseWorldX => screenToWorldX(mousePositionX);
+  static double get mouseWorldY => screenToWorldY(mousePositionY);
 
   static double distanceFromMouse(double x, double y) =>
-     calculateDistance(mouseWorldX, mouseWorldY, x, y);
+     distance(mouseWorldX, mouseWorldY, x, y);
 
   static void requestPointerLock() {
     var canvas = document.getElementById('canvas');
@@ -1204,7 +1139,6 @@ class Engine {
   static  void setDocumentTitle(String value){
     document.title = value;
   }
-
 
   static void setFavicon(String filename){
     final link = document.querySelector("link[rel*='icon']");
@@ -1380,8 +1314,6 @@ class Engine {
   }
 }
 
-
-
 typedef CallbackOnScreenSizeChanged = void Function(
     double previousWidth,
     double previousHeight,
@@ -1451,10 +1383,6 @@ class _EngineForegroundPainter extends CustomPainter {
 
 // TYPEDEFS
 typedef BasicWidgetBuilder = Widget Function();
-typedef CallbackOnJoystickEngaged = void Function(double angle, double distance);
-
-
-
 typedef PaintCanvas = void Function(Canvas canvas, Size size);
 typedef ShouldRepaint = bool Function(CustomPainter oldDelegate);
 
