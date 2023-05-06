@@ -14,7 +14,6 @@ import 'keycode.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-// import 'package:lemon_math/src.dart';
 import 'package:lemon_watch/src.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_strategy/url_strategy.dart' as us;
@@ -44,6 +43,8 @@ class Engine {
   static DrawCanvas? onDrawForeground;
   /// override safe
   static Function? onLeftClicked;
+  /// override safe
+  static Function(double x, double y)? onMouseMoved;
   /// override safe
   static Function(PointerScrollEvent value)? onPointerScrolled;
   /// override safe
@@ -120,6 +121,7 @@ class Engine {
   static final screen = _Screen();
   static var cameraX = 0.0;
   static var cameraY = 0.0;
+
   /// triggered if the state of the key is down
   static void Function(int keyCode)? onKeyDown;
   /// triggered the first moment the key is pressed down
@@ -281,6 +283,7 @@ class Engine {
     Function(int keyCode)? onKeyPressed,
     Function(int keyCode)? onKeyDown,
     Function(int keyCode)? onKeyUp,
+    Function(double x, double y)? onMouseMoved,
     Function(PointerScrollEvent value)? onMouseScroll,
     Function(SharedPreferences sharedPreferences)? onInit,
     Function(Object error, StackTrace stack)? onError,
@@ -305,6 +308,7 @@ class Engine {
     Engine.onKeyDown = onKeyDown;
     Engine.onKeyUp = onKeyUp;
     Engine.onPointerScrolled = onMouseScroll;
+    Engine.onMouseMoved = onMouseMoved;
     Engine.onRightClicked = onRightClicked;
     Engine.onRightClickReleased = onRightClickReleased;
     Engine.themeData.value = themeData;
@@ -348,7 +352,7 @@ class Engine {
     textPainter.paint(other ?? canvas, Offset(x, y));
   }
 
-  static void cameraFollow(double x, double y, double speed) {
+  static void cameraFollow(double x, double y, [double speed = 0.00075]) {
     final diffX = screenCenterWorldX - x;
     final diffY = screenCenterWorldY - y;
     cameraX -= (diffX * 75) * speed;
@@ -422,6 +426,7 @@ class Engine {
     previousMousePositionY = mousePositionY;
     mousePositionX = event.position.dx;
     mousePositionY = event.position.dy;
+    onMouseMoved?.call(mousePositionX, mousePositionY);
   }
 
   static void _internalOnPointerHover(PointerHoverEvent event) {
@@ -430,6 +435,7 @@ class Engine {
     mousePositionX = event.position.dx;
     mousePositionY = event.position.dy;
     touchHeldId = event.pointer;
+    onMouseMoved?.call(mousePositionX, mousePositionY);
   }
 
   /// event.buttons is always 0 and does not seem to correspond to the left or right mouse
@@ -1003,15 +1009,13 @@ class Engine {
           onTap: _internalOnTap,
           onLongPress: _internalOnLongPress,
           onLongPressDown: _internalOnLongPressDown,
-          // onPanStart: _internalOnPanStart,
-          // onPanUpdate: _internalOnPanUpdate,
-          // onPanEnd: _internalOnPanEnd,
           onSecondaryTapDown: _internalOnSecondaryTapDown,
           child: WatchBuilder(watchBackgroundColor, (Color backgroundColor){
             return Container(
                 color: backgroundColor,
                 width: screen.width,
                 height: screen.height,
+                alignment: Alignment.center,
                 child: CustomPaint(
                   isComplex: true,
                   willChange: true,
