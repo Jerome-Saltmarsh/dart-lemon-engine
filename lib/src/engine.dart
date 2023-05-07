@@ -1015,7 +1015,6 @@ class Engine {
                 color: backgroundColor,
                 width: screen.width,
                 height: screen.height,
-                alignment: Alignment.center,
                 child: CustomPaint(
                   isComplex: true,
                   willChange: true,
