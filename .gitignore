@@ -1,6 +1,53 @@
-# Files and directories created by pub.
+# Flutter/Dart specific
 .dart_tool/
+.flutter-plugins
 .packages
-
-# Conventional directory for build output.
+.pub/
 build/
+coverage/
+
+# Android Studio specific
+android/
+.idea/
+*.iml
+*.iws
+*.ipr
+.gradle/
+/local.properties
+
+# Visual Studio Code specific
+.vscode/
+*.code-workspace
+
+# macOS specific
+.DS_Store
+
+# Flutter generated files
+.dart_tool/
+.flutter-plugins
+.packages
+.pub/
+build/
+coverage/
+
+# Android generated files
+*.apk
+*.ap_
+*.aab
+*.dex
+*.o
+*.so
+*.aar
+*.hprof
+*.lock
+
+# Gradle generated files
+.gradle/
+/captures/
+/proguard/
+
+# Miscellaneous
+/.idea/
+/*.iml
+/*.iws
+/*.ipr
