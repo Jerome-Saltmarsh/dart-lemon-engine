@@ -23,152 +23,152 @@ class Engine {
   // HOOKS
   /// the following hooks are designed to be easily swapped in and out without inheritance
   /// override safe. run this snippet inside your initialization code.
-  /// engine.onTapDown = (TapDownDetails details) => print('tap detected');
-  static GestureTapDownCallback? onTapDown;
+  /// this.onTapDown = (TapDownDetails details) => print('tap detected');
+  GestureTapDownCallback? onTapDown;
   /// override safe
-  static GestureTapCallback? onTap;
+  GestureTapCallback? onTap;
   /// override safe
-  static GestureLongPressCallback? onLongPress;
+  GestureLongPressCallback? onLongPress;
   /// override safe
-  static GestureLongPressDownCallback? onLongPressDown;
+  GestureLongPressDownCallback? onLongPressDown;
   /// override safe
-  static GestureTapDownCallback? onSecondaryTapDown;
+  GestureTapDownCallback? onSecondaryTapDown;
   /// override safe
-  static CallbackOnScreenSizeChanged? onScreenSizeChanged;
+  CallbackOnScreenSizeChanged? onScreenSizeChanged;
   /// override safe
-  static Function? onDispose;
+  Function? onDispose;
   /// override safe
-  static DrawCanvas? onDrawCanvas;
+  DrawCanvas? onDrawCanvas;
   /// override safe
-  static DrawCanvas? onDrawForeground;
+  DrawCanvas? onDrawForeground;
   /// override safe
-  static Function? onLeftClicked;
+  Function? onLeftClicked;
   /// override safe
-  static Function(double x, double y)? onMouseMoved;
+  Function(double x, double y)? onMouseMoved;
   /// override safe
-  static Function(PointerScrollEvent value)? onPointerScrolled;
+  Function(PointerScrollEvent value)? onPointerScrolled;
   /// override safe
-  static Function(PointerSignalEvent value)? onPointerSignalEvent;
+  Function(PointerSignalEvent value)? onPointerSignalEvent;
   /// override safe
-  static Function? onRightClicked;
+  Function? onRightClicked;
   /// override safe
-  static Function? onRightClickReleased;
+  Function? onRightClickReleased;
   /// override safe
-  static Function(SharedPreferences sharedPreferences)? onInit;
+  Function(SharedPreferences sharedPreferences)? onInit;
   /// override safe
-  static Function? onUpdate;
+  Function? onUpdate;
   /// override safe
   /// gets called when update timer is changed
-  static Function? onUpdateTimerReset;
+  Function? onUpdateTimerReset;
   /// override safe
-  static BasicWidgetBuilder? onBuildLoadingScreen;
+  BasicWidgetBuilder? onBuildLoadingScreen;
   /// override safe
-  static Function(Object error, StackTrace stack)? onError;
+  Function(Object error, StackTrace stack)? onError;
 
   // VARIABLES
-  static List<Offset> touchPoints = [];
-  static var touches = 0;
-  static var touchDownId = 0;
-  static var touchHeldId = 0;
-  static late ui.Image _bufferImage;
-  static var _bufferBlendMode = BlendMode.dstATop;
-  static final keyState = <int, bool>{ };
-  static final keyStateDuration = <int, int>{ };
+  List<Offset> touchPoints = [];
+  var touches = 0;
+  var touchDownId = 0;
+  var touchHeldId = 0;
+  late ui.Image _bufferImage;
+  var _bufferBlendMode = BlendMode.dstATop;
+  final keyState = <int, bool>{ };
+  final keyStateDuration = <int, int>{ };
   static final random = Random();
-  static var textPainter = TextPainter(
+  var textPainter = TextPainter(
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr
   );
-  static final Map<String, TextSpan> textSpans = {
+  final Map<String, TextSpan> textSpans = {
   };
-  static late Canvas canvas;
+  late Canvas canvas;
 
-  static final paint = Paint()
+  final paint = Paint()
     ..color = Colors.white
     ..strokeCap = StrokeCap.round
     ..style = PaintingStyle.fill
     ..isAntiAlias = false
     ..strokeWidth = 1;
 
-  static final spritePaint = Paint()
+  final spritePaint = Paint()
     ..color = Colors.white
     ..strokeCap = StrokeCap.round
     ..style = PaintingStyle.fill
     ..isAntiAlias = false
     ..strokeWidth = 1;
-  static Timer? updateTimer;
-  static var scrollSensitivity = 0.0005;
-  static var cameraSmoothFollow = true;
-  static var zoomSensitivity = 0.175;
-  static var targetZoom = 1.0;
-  static var zoomOnScroll = true;
-  static var mousePositionX = 0.0;
-  static var mousePositionY = 0.0;
-  static var previousMousePositionX = 0.0;
-  static var previousMousePositionY = 0.0;
-  static var mouseLeftDownFrames = 0;
-  static var zoom = 1.0;
-  static var drawCanvasAfterUpdate = true;
-  static late BuildContext buildContext;
-  static late final sharedPreferences;
-  static final keyboardState = <LogicalKeyboardKey, int>{};
-  static final themeData = Watch<ThemeData?>(null);
-  static final fullScreen = Watch(false);
-  static final deviceType = Watch(DeviceType.Computer);
-  static final cursorType = Watch(CursorType.Precise);
-  static final notifierPaintFrame = ValueNotifier<int>(0);
-  static final notifierPaintForeground = ValueNotifier<int>(0);
-  static final screen = _Screen();
-  static var cameraX = 0.0;
-  static var cameraY = 0.0;
+  Timer? updateTimer;
+  var scrollSensitivity = 0.0005;
+  var cameraSmoothFollow = true;
+  var zoomSensitivity = 0.175;
+  var targetZoom = 1.0;
+  var zoomOnScroll = true;
+  var mousePositionX = 0.0;
+  var mousePositionY = 0.0;
+  var previousMousePositionX = 0.0;
+  var previousMousePositionY = 0.0;
+  var mouseLeftDownFrames = 0;
+  var zoom = 1.0;
+  var drawCanvasAfterUpdate = true;
+  late BuildContext buildContext;
+  late final sharedPreferences;
+  final keyboardState = <LogicalKeyboardKey, int>{};
+  final themeData = Watch<ThemeData?>(null);
+  final fullScreen = Watch(false);
+  final deviceType = Watch(DeviceType.Computer);
+  final cursorType = Watch(CursorType.Precise);
+  final notifierPaintFrame = ValueNotifier<int>(0);
+  final notifierPaintForeground = ValueNotifier<int>(0);
+  final screen = _Screen();
+  var cameraX = 0.0;
+  var cameraY = 0.0;
 
   /// triggered if the state of the key is down
-  static void Function(int keyCode)? onKeyDown;
+  void Function(int keyCode)? onKeyDown;
   /// triggered the first moment the key is pressed down
-  static void Function(int keyCode)? onKeyPressed;
+  void Function(int keyCode)? onKeyPressed;
   /// triggered upon key release
-  static void Function(int keyCode)? onKeyUp;
+  void Function(int keyCode)? onKeyUp;
 
   // SETTERS
-  static set bufferImage(ui.Image image){
+  set bufferImage(ui.Image image){
     if (_bufferImage == image) return;
     flushBuffer();
     _bufferImage = image;
   }
   
-  static set bufferBlendMode(BlendMode value){
+  set bufferBlendMode(BlendMode value){
     if (_bufferBlendMode == value) return;
     flushBuffer();
     _bufferBlendMode = value;
   }
 
-  static set buildUI(WidgetBuilder? value) => watchBuildUI.value = value;
-  static set title(String value) => watchTitle.value = value;
-  static set backgroundColor(Color value) => watchBackgroundColor.value = value;
+  set buildUI(WidgetBuilder? value) => watchBuildUI.value = value;
+  set title(String value) => watchTitle.value = value;
+  set backgroundColor(Color value) => watchBackgroundColor.value = value;
 
   // GETTERS
-  static BlendMode get bufferBlendMode => _bufferBlendMode;
-  static double get screenCenterRenderX => (Screen_Left + Screen_Right) * 0.5;
-  static double get screenCenterRenderY => (Screen_Top + Screen_Bottom) * 0.5;
-  static double get screenDiagonalLength => hyp(screen.width, screen.height);
-  static double get screenArea => screen.width * screen.height;
-  static WidgetBuilder? get buildUI => watchBuildUI.value;
-  static String get title => watchTitle.value;
-  static Color get backgroundColor => watchBackgroundColor.value;
-  static bool get isLocalHost => Uri.base.host == 'localhost';
-  static bool get deviceIsComputer => deviceType.value == DeviceType.Computer;
-  static bool get deviceIsPhone => deviceType.value == DeviceType.Phone;
-  static int get paintFrame => notifierPaintFrame.value;
-  static bool get initialized => watchInitialized.value;
+  BlendMode get bufferBlendMode => _bufferBlendMode;
+  double get screenCenterRenderX => (Screen_Left + Screen_Right) * 0.5;
+  double get screenCenterRenderY => (Screen_Top + Screen_Bottom) * 0.5;
+  double get screenDiagonalLength => hyp(screen.width, screen.height);
+  double get screenArea => screen.width * screen.height;
+  WidgetBuilder? get buildUI => watchBuildUI.value;
+  String get title => watchTitle.value;
+  Color get backgroundColor => watchBackgroundColor.value;
+  bool get isLocalHost => Uri.base.host == 'localhost';
+  bool get deviceIsComputer => deviceType.value == DeviceType.Computer;
+  bool get deviceIsPhone => deviceType.value == DeviceType.Phone;
+  int get paintFrame => notifierPaintFrame.value;
+  bool get initialized => watchInitialized.value;
 
   // WATCHES
-  static final watchBackgroundColor = Watch(Default_Background_Color);
-  static final watchBuildUI = Watch<WidgetBuilder?>(null);
-  static final watchTitle = Watch(Default_Title);
-  static final watchInitialized = Watch(false);
-  static final watchDurationPerFrame = Watch(Duration(milliseconds: Default_Milliseconds_Per_Frame));
-  static final watchMouseLeftDown = Watch(false, onChanged: _internalOnChangedMouseLeftDown);
-  static final mouseRightDown = Watch(false);
+  final watchBackgroundColor = Watch(Default_Background_Color);
+  final watchBuildUI = Watch<WidgetBuilder?>(null);
+  final watchTitle = Watch(Default_Title);
+  final watchInitialized = Watch(false);
+  final watchDurationPerFrame = Watch(Duration(milliseconds: Default_Milliseconds_Per_Frame));
+  late final watchMouseLeftDown = Watch(false, onChanged: _internalOnChangedMouseLeftDown);
+  final mouseRightDown = Watch(false);
 
   // DEFAULTS
   static const Default_Milliseconds_Per_Frame = 30;
@@ -189,24 +189,24 @@ class Engine {
   static const GoldenRatio_0_618 = 0.61803398875;
   static const GoldenRatio_0_381 = 0.38196601125;
 
-  static var Screen_Top = 0.0;
-  static var Screen_Right = 0.0;
-  static var Screen_Bottom = 0.0;
-  static var Screen_Left = 0.0;
+  var Screen_Top = 0.0;
+  var Screen_Right = 0.0;
+  var Screen_Bottom = 0.0;
+  var Screen_Left = 0.0;
 
-  static bool get keyPressedShiftLeft =>
+  bool get keyPressedShiftLeft =>
       keyPressed(KeyCode.Shift_Left);
 
-  static bool get keyPressedSpace =>
+  bool get keyPressedSpace =>
       keyPressed(KeyCode.Space);
 
-  static bool keyPressed(int key) =>
+  bool keyPressed(int key) =>
       keyState[key] ?? false;
 
-  static int getKeyDownDuration(int key) =>
+  int getKeyDownDuration(int key) =>
     keyStateDuration[key] ?? 0;
 
-  static void _internalOnChangedMouseLeftDown(bool value){
+  void _internalOnChangedMouseLeftDown(bool value){
     if (value) {
       onLeftClicked?.call();
     } else {
@@ -214,7 +214,7 @@ class Engine {
     }
   }
 
-  static void _internalSetScreenSize(double width, double height){
+  void _internalSetScreenSize(double width, double height){
     if (screen.width == width && screen.height == height) return;
     if (!screen.initialized) {
       screen.width = width;
@@ -235,7 +235,7 @@ class Engine {
 
   // ACTIONS
 
-  static void toggleDeviceType() =>
+  void toggleDeviceType() =>
       deviceType.value =
       deviceIsComputer ? DeviceType.Phone : DeviceType.Computer;
 
@@ -247,7 +247,7 @@ class Engine {
     return frameInfo.image;
   }
 
-  static TextSpan getTextSpan(String text) {
+  TextSpan getTextSpan(String text) {
     var value = textSpans[text];
     if (value != null) return value;
     value = TextSpan(style: TextStyle(color: Colors.white), text: text);
@@ -255,13 +255,13 @@ class Engine {
     return value;
   }
 
-  static void writeText(String text, double x, double y) {
+  void writeText(String text, double x, double y) {
     textPainter.text = getTextSpan(text);
     textPainter.layout();
     textPainter.paint(canvas, Offset(x, y));
   }
 
-  static void run({
+  void run({
     required Function update,
     required DrawCanvas render,
     WidgetBuilder? buildUI,
@@ -290,30 +290,30 @@ class Engine {
     bool setPathUrlStrategy = true,
     Color backgroundColor = Default_Background_Color,
   }){
-    print("engine.run()");
-    Engine.watchTitle.value = title;
-    Engine.onInit = init;
-    Engine.onUpdate = update;
-    Engine.watchBuildUI.value = buildUI;
-    Engine.onBuildLoadingScreen = buildLoadingScreen;
-    Engine.onDrawCanvas = render;
-    Engine.onTapDown = onTapDown;
-    Engine.onLongPress = onLongPress;
-    Engine.onScreenSizeChanged = onScreenSizeChanged;
-    Engine.onDispose = onDispose;
-    Engine.onDrawCanvas = render;
-    Engine.onDrawForeground = onDrawForeground;
-    Engine.onLeftClicked = onLeftClicked;
-    Engine.onKeyPressed = onKeyPressed;
-    Engine.onKeyDown = onKeyDown;
-    Engine.onKeyUp = onKeyUp;
-    Engine.onPointerScrolled = onMouseScroll;
-    Engine.onMouseMoved = onMouseMoved;
-    Engine.onRightClicked = onRightClicked;
-    Engine.onRightClickReleased = onRightClickReleased;
-    Engine.themeData.value = themeData;
-    Engine.backgroundColor = backgroundColor;
-    Engine.onError = onError;
+    print("this.run()");
+    this.watchTitle.value = title;
+    this.onInit = init;
+    this.onUpdate = update;
+    this.watchBuildUI.value = buildUI;
+    this.onBuildLoadingScreen = buildLoadingScreen;
+    this.onDrawCanvas = render;
+    this.onTapDown = onTapDown;
+    this.onLongPress = onLongPress;
+    this.onScreenSizeChanged = onScreenSizeChanged;
+    this.onDispose = onDispose;
+    this.onDrawCanvas = render;
+    this.onDrawForeground = onDrawForeground;
+    this.onLeftClicked = onLeftClicked;
+    this.onKeyPressed = onKeyPressed;
+    this.onKeyDown = onKeyDown;
+    this.onKeyUp = onKeyUp;
+    this.onPointerScrolled = onMouseScroll;
+    this.onMouseMoved = onMouseMoved;
+    this.onRightClicked = onRightClicked;
+    this.onRightClickReleased = onRightClickReleased;
+    this.themeData.value = themeData;
+    this.backgroundColor = backgroundColor;
+    this.onError = onError;
 
     if (setPathUrlStrategy){
       us.setPathUrlStrategy();
@@ -322,17 +322,17 @@ class Engine {
     runZonedGuarded(_internalInit, _internalOnError);
   }
 
-  static void _internalOnError(Object error, StackTrace stack) {
+  void _internalOnError(Object error, StackTrace stack) {
       if (onError != null){
         onError?.call(error, stack);
         return;
       }
-      print("Warning no Engine.onError handler set");
+      print("Warning no this.onError handler set");
       print(error);
       print(stack);
   }
 
-  static void _internalOnPointerScrollEvent(PointerScrollEvent event) {
+  void _internalOnPointerScrollEvent(PointerScrollEvent event) {
     if (zoomOnScroll) {
       targetZoom -=  event.scrollDelta.dy * scrollSensitivity;
       targetZoom = targetZoom.clamp(0.2, 6);
@@ -340,35 +340,35 @@ class Engine {
     onPointerScrolled?.call(event);
   }
 
-  static void renderText(String text, double x, double y,
+  void renderText(String text, double x, double y,
       {Canvas? other, TextStyle? style}) =>
     renderTextSpan(
         TextSpan(style: style ?? const TextStyle(), text: text), x, y, other
     );
 
-  static void renderTextSpan(TextSpan textSpan, double x, double y, Canvas? other) {
+  void renderTextSpan(TextSpan textSpan, double x, double y, Canvas? other) {
     textPainter.text = textSpan;
     textPainter.layout();
     textPainter.paint(other ?? canvas, Offset(x, y));
   }
 
-  static void cameraFollow(double x, double y, [double speed = 0.00075]) {
+  void cameraFollow(double x, double y, [double speed = 0.00075]) {
     final diffX = screenCenterWorldX - x;
     final diffY = screenCenterWorldY - y;
     cameraX -= (diffX * 75) * speed;
     cameraY -= (diffY * 75) * speed;
   }
 
-  static void cameraCenter(double x, double y) {
+  void cameraCenter(double x, double y) {
     cameraX = x - (screenCenterX / zoom);
     cameraY = y - (screenCenterY / zoom);
   }
 
-  static void redrawCanvas() {
+  void redrawCanvas() {
     notifierPaintFrame.value++;
   }
 
-  static void refreshPage(){
+  void refreshPage(){
     final window = document.window;
     if (window == null) return;
     final domain = document.domain;
@@ -376,12 +376,12 @@ class Engine {
     window.location.href = domain;
   }
 
-  static void fullscreenToggle()  =>
+  void fullscreenToggle()  =>
     fullScreenActive ? fullScreenExit() : fullScreenEnter();
 
-  static void fullScreenExit() => document.exitFullscreen();
+  void fullScreenExit() => document.exitFullscreen();
 
-  static void fullScreenEnter() {
+  void fullScreenEnter() {
     final element = document.documentElement;
     if (element == null) {
       return;
@@ -393,7 +393,7 @@ class Engine {
     }
   }
 
-  static void panCamera() {
+  void panCamera() {
     final positionX = screenToWorldX(mousePositionX);
     final positionY = screenToWorldY(mousePositionY);
     final previousX = screenToWorldX(previousMousePositionX);
@@ -404,24 +404,24 @@ class Engine {
     cameraY += diffY;
   }
 
-  static void disableRightClickContextMenu() {
+  void disableRightClickContextMenu() {
     document.onContextMenu.listen((event) => event.preventDefault());
   }
 
-  static void setPaintColorWhite() {
+  void setPaintColorWhite() {
     paint.color = Colors.white;
   }
 
-  static void setPaintStrokeWidth(double value) {
+  void setPaintStrokeWidth(double value) {
     paint.strokeWidth = value;
   }
 
-  static void setPaintColor(Color value) {
+  void setPaintColor(Color value) {
     if (paint.color == value) return;
     paint.color = value;
   }
 
-  static void _internalOnPointerMove(PointerMoveEvent event) {
+  void _internalOnPointerMove(PointerMoveEvent event) {
     previousMousePositionX = mousePositionX;
     previousMousePositionY = mousePositionY;
     mousePositionX = event.position.dx;
@@ -429,7 +429,7 @@ class Engine {
     onMouseMoved?.call(mousePositionX, mousePositionY);
   }
 
-  static void _internalOnPointerHover(PointerHoverEvent event) {
+  void _internalOnPointerHover(PointerHoverEvent event) {
     previousMousePositionX = mousePositionX;
     previousMousePositionY = mousePositionY;
     mousePositionX = event.position.dx;
@@ -440,13 +440,16 @@ class Engine {
 
   /// event.buttons is always 0 and does not seem to correspond to the left or right mouse
   /// click like in internalOnPointerDown
-  static void _internalOnPointerUp(PointerUpEvent event) {
+  void _internalOnPointerUp(PointerUpEvent event) {
     watchMouseLeftDown.value = false;
     mouseRightDown.value = false;
   }
 
-  static void _internalOnPointerDown(PointerDownEvent event) {
-    // event.
+  void _internalOnPointerDown(PointerDownEvent event) {
+    previousMousePositionX = mousePositionX;
+    previousMousePositionY = mousePositionY;
+    mousePositionX = event.position.dx;
+    mousePositionY = event.position.dy;
     touchDownId = event.pointer;
 
     if (event.buttons == 1) {
@@ -457,7 +460,7 @@ class Engine {
     }
   }
 
-  static void _internalOnPointerSignal(PointerSignalEvent pointerSignalEvent) {
+  void _internalOnPointerSignal(PointerSignalEvent pointerSignalEvent) {
     if (pointerSignalEvent is PointerScrollEvent) {
       _internalOnPointerScrollEvent(pointerSignalEvent);
     } else {
@@ -465,44 +468,44 @@ class Engine {
     }
   }
 
-  static void _internalOnTapDown(TapDownDetails details){
+  void _internalOnTapDown(TapDownDetails details){
      onTapDown?.call(details);
   }
 
-  static void _internalOnScaleStart(ScaleStartDetails details){
+  void _internalOnScaleStart(ScaleStartDetails details){
     touches = details.pointerCount;
     touchPoints = [];
   }
 
-  static void _internalOnScaleUpdate(ScaleUpdateDetails details) {
+  void _internalOnScaleUpdate(ScaleUpdateDetails details) {
     // final _points = details.focalPoint - details.focalPointDelta;
     touchPoints = List.from(touchPoints)..add(details.focalPoint - details.focalPointDelta);
     touches = details.pointerCount;
   }
 
-  static void _internalOnScaleEnd(ScaleEndDetails details){
+  void _internalOnScaleEnd(ScaleEndDetails details){
     touches = details.pointerCount;
     touchPoints = [];
   }
 
-  static void _internalOnTap(){
+  void _internalOnTap(){
     onTap?.call();
   }
 
-  static void _internalOnLongPress(){
+  void _internalOnLongPress(){
     onLongPress?.call();
   }
 
-  static void _internalOnLongPressDown(LongPressDownDetails details){
+  void _internalOnLongPressDown(LongPressDownDetails details){
     onLongPressDown?.call(details);
   }
 
-  static void _internalOnSecondaryTapDown(TapDownDetails details){
+  void _internalOnSecondaryTapDown(TapDownDetails details){
     onSecondaryTapDown?.call(details);
   }
 
-  static void _internalPaint(Canvas canvas, Size size) {
-    Engine.canvas = canvas;
+  void _internalPaint(Canvas canvas, Size size) {
+    this.canvas = canvas;
     canvas.scale(zoom, zoom);
     canvas.translate(-cameraX, -cameraY);
     if (!initialized) return;
@@ -521,13 +524,13 @@ class Engine {
     assert(bufferIndex == 0);
   }
 
-  static Duration buildDurationFramesPerSecond(int framesPerSecond) =>
+  Duration buildDurationFramesPerSecond(int framesPerSecond) =>
     Duration(milliseconds: convertFramesPerSecondsToMilliseconds(framesPerSecond));
 
-  static int convertFramesPerSecondsToMilliseconds(int framesPerSecond) =>
+  int convertFramesPerSecondsToMilliseconds(int framesPerSecond) =>
     Milliseconds_Per_Second ~/ framesPerSecond;
 
-  static Future _internalInit() async {
+  Future _internalInit() async {
 
     SystemChannels.keyEvent.setMessageHandler(_handleRawKeyMessage);
     runApp(_internalBuildApp());
@@ -545,7 +548,7 @@ class Engine {
 
     disableRightClickContextMenu();
     paint.isAntiAlias = false;
-    Engine.sharedPreferences = await SharedPreferences.getInstance();
+    this.sharedPreferences = await SharedPreferences.getInstance();
     if (onInit != null) {
       await onInit!(sharedPreferences);
     }
@@ -556,11 +559,11 @@ class Engine {
     watchInitialized.value = true;
   }
 
-  static void _internalOnFullScreenChanged(event){
+  void _internalOnFullScreenChanged(event){
     fullScreen.value = fullScreenActive;
   }
 
-  static void resetUpdateTimer(){
+  void resetUpdateTimer(){
     updateTimer?.cancel();
     updateTimer = Timer.periodic(
       watchDurationPerFrame.value,
@@ -569,7 +572,7 @@ class Engine {
     onUpdateTimerReset?.call();
   }
 
-  static void _internalOnUpdate(Timer timer){
+  void _internalOnUpdate(Timer timer){
     Screen_Left = cameraX;
     Screen_Right = cameraX + (screen.width / zoom);
     Screen_Top = cameraY;
@@ -595,56 +598,56 @@ class Engine {
   void setFramesPerSecond(int framesPerSecond) =>
      watchDurationPerFrame.value = buildDurationFramesPerSecond(framesPerSecond);
 
-  static ui.Image get bufferImage => _bufferImage;
+  ui.Image get bufferImage => _bufferImage;
 
-  static var bufferIndex = 0;
-  static var batchesRendered = 0;
-  static var batches1Rendered = 0;
-  static var batches2Rendered = 0;
-  static var batches4Rendered = 0;
-  static var batches8Rendered = 0;
-  static var batches16Rendered = 0;
-  static var batches32Rendered = 0;
-  static var batches64Rendered = 0;
-  static var batches128Rendered = 0;
+  var bufferIndex = 0;
+  var batchesRendered = 0;
+  var batches1Rendered = 0;
+  var batches2Rendered = 0;
+  var batches4Rendered = 0;
+  var batches8Rendered = 0;
+  var batches16Rendered = 0;
+  var batches32Rendered = 0;
+  var batches64Rendered = 0;
+  var batches128Rendered = 0;
 
-  static final _bufferSrc1 = Float32List(1 * 4);
-  static final _bufferDst1 = Float32List(1 * 4);
-  static final _bufferClr1 = Int32List(1);
+  final _bufferSrc1 = Float32List(1 * 4);
+  final _bufferDst1 = Float32List(1 * 4);
+  final _bufferClr1 = Int32List(1);
 
-  static final _bufferSrc2 = Float32List(2 * 4);
-  static final _bufferDst2 = Float32List(2 * 4);
-  static final _bufferClr2 = Int32List(2);
+  final _bufferSrc2 = Float32List(2 * 4);
+  final _bufferDst2 = Float32List(2 * 4);
+  final _bufferClr2 = Int32List(2);
 
-  static final _bufferSrc4 = Float32List(4 * 4);
-  static final _bufferDst4 = Float32List(4 * 4);
-  static final _bufferClr4 = Int32List(4);
+  final _bufferSrc4 = Float32List(4 * 4);
+  final _bufferDst4 = Float32List(4 * 4);
+  final _bufferClr4 = Int32List(4);
 
-  static final _bufferSrc8 = Float32List(8 * 4);
-  static final _bufferDst8 = Float32List(8 * 4);
-  static final _bufferClr8 = Int32List(8);
+  final _bufferSrc8 = Float32List(8 * 4);
+  final _bufferDst8 = Float32List(8 * 4);
+  final _bufferClr8 = Int32List(8);
 
-  static final _bufferSrc16 = Float32List(16 * 4);
-  static final _bufferDst16 = Float32List(16 * 4);
-  static final _bufferClr16 = Int32List(16);
+  final _bufferSrc16 = Float32List(16 * 4);
+  final _bufferDst16 = Float32List(16 * 4);
+  final _bufferClr16 = Int32List(16);
 
-  static final _bufferSrc32 = Float32List(32 * 4);
-  static final _bufferDst32 = Float32List(32 * 4);
-  static final _bufferClr32 = Int32List(32);
+  final _bufferSrc32 = Float32List(32 * 4);
+  final _bufferDst32 = Float32List(32 * 4);
+  final _bufferClr32 = Int32List(32);
 
-  static final _bufferSrc64 = Float32List(64 * 4);
-  static final _bufferDst64 = Float32List(64 * 4);
-  static final _bufferClr64 = Int32List(64);
+  final _bufferSrc64 = Float32List(64 * 4);
+  final _bufferDst64 = Float32List(64 * 4);
+  final _bufferClr64 = Int32List(64);
 
-  static final _bufferSrc128 = Float32List(128 * 4);
-  static final _bufferDst128 = Float32List(128 * 4);
-  static final _bufferClr128 = Int32List(128);
+  final _bufferSrc128 = Float32List(128 * 4);
+  final _bufferDst128 = Float32List(128 * 4);
+  final _bufferClr128 = Int32List(128);
 
-  static final bufferSrc = _bufferSrc128;
-  static final bufferDst = _bufferDst128;
-  static final bufferClr = _bufferClr128;
+  late final bufferSrc = _bufferSrc128;
+  late final bufferDst = _bufferDst128;
+  late final bufferClr = _bufferClr128;
 
-  static void flushBuffer() {
+  void flushBuffer() {
     batchesRendered++;
     if (bufferIndex == 0) return;
     var flushIndex = 0;
@@ -797,14 +800,14 @@ class Engine {
     bufferIndex = 0;
   }
 
-  static void flushAll(){
+  void flushAll(){
     batchesRendered++;
     canvas.drawRawAtlas(_bufferImage, bufferDst, bufferSrc, bufferClr, _bufferBlendMode, null, spritePaint);
     bufferIndex = 0;
     batches128Rendered++;
   }
 
-  static void renderSprite({
+  void renderSprite({
     required ui.Image image,
     required double srcX,
     required double srcY,
@@ -832,7 +835,7 @@ class Engine {
   }
 
   /// The anchor determines the point around which the sprite is rotated
-  static void renderSpriteRotated({
+  void renderSpriteRotated({
     required ui.Image image,
     required double srcX,
     required double srcY,
@@ -880,7 +883,7 @@ class Engine {
     incrementBufferIndex();
   }
 
-  static void renderExternalCanvas({
+  void renderExternalCanvas({
     required Canvas canvas,
     required ui.Image image,
     required double srcX,
@@ -906,20 +909,20 @@ class Engine {
     canvas.drawRawAtlas(image, _bufferDst1, _bufferSrc1, _bufferClr1, _bufferBlendMode, null, paint);
   }
 
-  static void renderCircle(double x, double y, double radius, Color color) {
+  void renderCircle(double x, double y, double radius, Color color) {
     renderCircleOffset(Offset(x, y), radius, color);
   }
 
-  static void renderCircleOffset(Offset offset, double radius, Color color) {
+  void renderCircleOffset(Offset offset, double radius, Color color) {
     setPaintColor(color);
     canvas.drawCircle(offset, radius, paint);
   }
 
-  static void renderLine(double x1, double y1, double x2, double y2){
+  void renderLine(double x1, double y1, double x2, double y2){
     canvas.drawLine(Offset(x1, y1), Offset(x2, y2), paint);
   }
 
-  static void renderCircleOutline({
+  void renderCircleOutline({
     required double radius,
     required double x,
     required double y,
@@ -938,11 +941,11 @@ class Engine {
       points.add(Offset(cos(a1) * radius, sin(a1) * radius));
     }
     for (int i = 0; i < points.length - 1; i++) {
-      canvas.drawLine(points[i] + z, points[i + 1] + z, Engine.paint);
+      canvas.drawLine(points[i] + z, points[i + 1] + z, this.paint);
     }
   }
 
-  static Future<Map<String, dynamic>> _handleRawKeyMessage(dynamic message) async {
+  Future<Map<String, dynamic>> _handleRawKeyMessage(dynamic message) async {
     // print('handleRawKeyMessage($message)');
     final type = message['type'];
     final int keyCode = message['keyCode'];
@@ -962,11 +965,11 @@ class Engine {
   }
 
 
-  static Widget _internalBuildApp(){
+  Widget _internalBuildApp(){
     return WatchBuilder(themeData, (ThemeData? themeData){
       return MaterialApp(
         title: title,
-        // routes: Engine.routes ?? {},
+        // routes: this.routes ?? {},
         theme: themeData,
         home: Scaffold(
           body: WatchBuilder(watchInitialized, (bool value) {
@@ -994,7 +997,7 @@ class Engine {
     });
   }
 
-  static Widget _internalBuildCanvas(BuildContext context) {
+  Widget _internalBuildCanvas(BuildContext context) {
     final child = Listener(
       onPointerDown: _internalOnPointerDown,
       onPointerMove: _internalOnPointerMove,
@@ -1018,16 +1021,17 @@ class Engine {
                 child: CustomPaint(
                   isComplex: true,
                   willChange: true,
-                  painter: _EnginePainter(repaint: notifierPaintFrame),
+                  painter: _EnginePainter(repaint: notifierPaintFrame, engine: this),
                   foregroundPainter: _EngineForegroundPainter(
-                      repaint: notifierPaintForeground
+                      repaint: notifierPaintForeground,
+                      engine: this,
                   ),
                 )
             );
           })),
     );
 
-    return WatchBuilder(Engine.cursorType, (CursorType cursorType) =>
+    return WatchBuilder(this.cursorType, (CursorType cursorType) =>
         MouseRegion(
           cursor: _internalMapCursorTypeToSystemMouseCursor(cursorType),
           child: child,
@@ -1061,7 +1065,7 @@ class Engine {
   }
 
 
-  static double calculateRadianDifference(double a, double b){
+  double calculateRadianDifference(double a, double b){
     final diff = b - a;
     if (diff > pi) {
       return -(PI_2 - diff);
@@ -1094,7 +1098,7 @@ class Engine {
   static bool randomBool() =>
     random.nextDouble() > 0.5;
 
-  static SystemMouseCursor _internalMapCursorTypeToSystemMouseCursor(CursorType value){
+  SystemMouseCursor _internalMapCursorTypeToSystemMouseCursor(CursorType value){
     switch (value) {
       case CursorType.Forbidden:
         return SystemMouseCursors.forbidden;
@@ -1109,45 +1113,45 @@ class Engine {
     }
   }
 
-  static void drawLine(double x1, double y1, double x2, double y2) =>
+  void drawLine(double x1, double y1, double x2, double y2) =>
     canvas.drawLine(Offset(x1, y1), Offset(x2, y2), paint);
 
-  static bool get fullScreenActive => document.fullscreenElement != null;
+  bool get fullScreenActive => document.fullscreenElement != null;
 
-  static double screenToWorldX(double value)  =>
+  double screenToWorldX(double value)  =>
     cameraX + value / zoom;
 
-  static double screenToWorldY(double value) =>
+  double screenToWorldY(double value) =>
     cameraY + value / zoom;
 
-  static double worldToScreenX(double x) =>
+  double worldToScreenX(double x) =>
     zoom * (x - cameraX);
 
-  static double worldToScreenY(double y) =>
+  double worldToScreenY(double y) =>
     zoom * (y - cameraY);
 
-  static double get screenCenterX => screen.width * 0.5;
-  static double get screenCenterY => screen.height * 0.5;
-  static double get screenCenterWorldX => screenToWorldX(screenCenterX);
-  static double get screenCenterWorldY => screenToWorldY(screenCenterY);
-  static double get mouseWorldX => screenToWorldX(mousePositionX);
-  static double get mouseWorldY => screenToWorldY(mousePositionY);
+  double get screenCenterX => screen.width * 0.5;
+  double get screenCenterY => screen.height * 0.5;
+  double get screenCenterWorldX => screenToWorldX(screenCenterX);
+  double get screenCenterWorldY => screenToWorldY(screenCenterY);
+  double get mouseWorldX => screenToWorldX(mousePositionX);
+  double get mouseWorldY => screenToWorldY(mousePositionY);
 
-  static double distanceFromMouse(double x, double y) =>
+  double distanceFromMouse(double x, double y) =>
      distance(mouseWorldX, mouseWorldY, x, y);
 
-  static void requestPointerLock() {
+  void requestPointerLock() {
     var canvas = document.getElementById('canvas');
     if (canvas != null) {
       canvas.requestPointerLock();
     }
   }
 
-  static  void setDocumentTitle(String value){
+   void setDocumentTitle(String value){
     document.title = value;
   }
 
-  static void setFavicon(String filename){
+  void setFavicon(String filename){
     final link = document.querySelector("link[rel*='icon']");
     if (link == null) return;
     print("setFavicon($filename)");
@@ -1157,15 +1161,15 @@ class Engine {
     document.getElementsByTagName('head')[0].append(link);
   }
 
-  static void setCursorWait(){
+  void setCursorWait(){
     setCursorByName('wait');
   }
 
-  static void setCursorPointer(){
+  void setCursorPointer(){
     setCursorByName('default');
   }
 
-  static void setCursorByName(String name){
+  void setCursorByName(String name){
     final body = document.body;
     if (body == null) return;
     body.style.cursor = name;
@@ -1174,13 +1178,13 @@ class Engine {
   static int linerInterpolationInt(int a, int b, double t) =>
       (a * (1.0 - t) + b * t).toInt();
 
-  static void downloadString({
+  void downloadString({
     required String contents,
     required String filename,
   }) =>
       downloadBytes(utf8.encode(contents), name: filename);
 
-  static void downloadBytes(
+  void downloadBytes(
       List<int> bytes, {
         required String name,
       }) {
@@ -1195,21 +1199,21 @@ class Engine {
     return;
   }
 
-  static String enumString(dynamic value){
+  String enumString(dynamic value){
     final text = value.toString();
     final index = text.indexOf(".");
     if (index == -1) return text;
     return text.substring(index + 1, text.length).replaceAll("_", " ");
   }
 
-  static void incrementBufferIndex(){
-    Engine.bufferIndex++;
-    if (Engine.bufferIndex == 128) {
-      Engine.flushAll();
+  void incrementBufferIndex(){
+    this.bufferIndex++;
+    if (this.bufferIndex == 128) {
+      this.flushAll();
     }
   }
 
-  static Future<ui.Image> _generateEmptyImage() async {
+  Future<ui.Image> _generateEmptyImage() async {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
     canvas.drawRect(Rect.fromLTWH(0, 0, 1, 1), Paint());
@@ -1217,7 +1221,7 @@ class Engine {
     return await picture.toImage(1, 1);
   }
 
-  static Widget buildAtlasImageButton({
+  Widget buildAtlasImageButton({
     required ui.Image image,
     required double srcX,
     required double srcY,
@@ -1242,7 +1246,7 @@ class Engine {
         ),
       );
 
-  static Widget buildAtlasImage({
+  Widget buildAtlasImage({
     required ui.Image image,
     required double srcX,
     required double srcY,
@@ -1257,7 +1261,7 @@ class Engine {
         height: srcHeight * scale,
         child: buildCanvas(
             paint: (Canvas canvas, Size size) =>
-                Engine.renderExternalCanvas(
+                this.renderExternalCanvas(
                   canvas: canvas,
                   image: image,
                   srcX: srcX,
@@ -1272,7 +1276,7 @@ class Engine {
         ),
       );
 
-  static Widget buildOnPressed({
+  Widget buildOnPressed({
     required Widget child,
     Function? action,
     Function? onRightClick,
@@ -1302,7 +1306,7 @@ class Engine {
     );
   }
 
-  static Widget buildCanvas({
+  Widget buildCanvas({
     required PaintCanvas paint,
     ValueNotifier<int>? frame,
     ShouldRepaint? shouldRepaint,
@@ -1316,7 +1320,7 @@ class Engine {
     );
   }
 
-  static bool _doNotRepaint(CustomPainter oldDelegate) {
+  bool _doNotRepaint(CustomPainter oldDelegate) {
     return false;
   }
 }
@@ -1362,12 +1366,14 @@ enum CursorType {
 
 class _EnginePainter extends CustomPainter {
 
-  const _EnginePainter({required Listenable repaint})
+  final Engine engine;
+
+  const _EnginePainter({required Listenable repaint, required this.engine})
       : super(repaint: repaint);
 
   @override
   void paint(Canvas _canvas, Size size) {
-    Engine._internalPaint(_canvas, size);
+    engine._internalPaint(_canvas, size);
   }
 
   @override
@@ -1376,12 +1382,14 @@ class _EnginePainter extends CustomPainter {
 
 class _EngineForegroundPainter extends CustomPainter {
 
-  const _EngineForegroundPainter({required Listenable repaint})
+  final Engine engine;
+
+  const _EngineForegroundPainter({required Listenable repaint, required this.engine})
       : super(repaint: repaint);
 
   @override
   void paint(Canvas _canvas, Size _size) {
-    Engine.onDrawForeground?.call(Engine.canvas, _size);
+    engine.onDrawForeground?.call(_canvas, _size);
   }
 
   @override
