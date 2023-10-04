@@ -1,24 +1,18 @@
-library lemon_engine;
-import 'dart:convert';
-
-import 'package:lemon_engine/src/math.dart';
-import 'package:universal_html/html.dart';
-
 import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'keycode.dart';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lemon_engine/lemon_engine.dart';
+import 'package:lemon_engine/src/math.dart';
 import 'package:lemon_watch/src.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_strategy/url_strategy.dart' as us;
+import 'package:universal_html/html.dart' as html;
 
-class Engine {
+class Engine extends StatelessWidget {
 
   // HOOKS
   /// the following hooks are designed to be easily swapped in and out without inheritance
@@ -59,29 +53,34 @@ class Engine {
   Function? onUpdate;
   /// override safe
   /// gets called when update timer is changed
-  Function? onUpdateTimerReset;
+  Function? onUpdateDurationChanged;
   /// override safe
-  BasicWidgetBuilder? onBuildLoadingScreen;
+  Function? onMouseEnterCanvas;
+  /// override safe
+  Function? onMouseExitCanvas;
+  /// triggered if the state of the key is down
+  void Function(int keyCode)? onKeyDown;
+  /// triggered the first moment the key is pressed down
+  void Function(int keyCode)? onKeyPressed;
+  /// triggered upon key release
+  void Function(int keyCode)? onKeyUp;
+  /// override safe
+  Function? dispose;
+  /// override safe
+  WidgetBuilder loadingScreenBuilder = (context) => Text("LOADING");
   /// override safe
   Function(Object error, StackTrace stack)? onError;
 
-  // VARIABLES
+  /// milliseconds elapsed since last render frame
+  final msRender = Watch(0);
+  /// milliseconds elapsed since last update frame
+  final msUpdate = Watch(0);
   List<Offset> touchPoints = [];
-  var touches = 0;
-  var touchDownId = 0;
-  var touchHeldId = 0;
-  late ui.Image _bufferImage;
-  var _bufferBlendMode = BlendMode.dstATop;
   final keyState = <int, bool>{ };
+  final renderFramesSkipped = Watch(0);
   final keyStateDuration = <int, int>{ };
-  static final random = Random();
-  var textPainter = TextPainter(
-      textAlign: TextAlign.center,
-      textDirection: TextDirection.ltr
-  );
   final Map<String, TextSpan> textSpans = {
   };
-  late Canvas canvas;
 
   final paint = Paint()
     ..color = Colors.white
@@ -90,13 +89,36 @@ class Engine {
     ..isAntiAlias = false
     ..strokeWidth = 1;
 
-  final spritePaint = Paint()
-    ..color = Colors.white
-    ..strokeCap = StrokeCap.round
-    ..style = PaintingStyle.fill
-    ..isAntiAlias = false
-    ..strokeWidth = 1;
   Timer? updateTimer;
+
+  final keyboardState = <LogicalKeyboardKey, int>{};
+  final themeData = Watch<ThemeData?>(null);
+  final fullScreen = Watch(false);
+  final deviceType = Watch(DeviceType.Computer);
+  final cursorType = Watch(CursorType.Precise);
+  final notifierPaintFrame = ValueNotifier<int>(0);
+  final notifierPaintForeground = ValueNotifier<int>(0);
+  final screen = Screen();
+
+  late BuildContext buildContext;
+  late Canvas canvas;
+  late ui.Image _bufferImage;
+
+  late final sharedPreferences;
+
+  var _bufferBlendMode = BlendMode.dstATop;
+
+  var textPainter = TextPainter(
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr
+  );
+  var lastRenderTime = DateTime.now();
+  var lastUpdateTime = DateTime.now();
+  var minMSPerRender = 5;
+  var mouseOverCanvas = false;
+  var touches = 0;
+  var touchDownId = 0;
+  var touchHeldId = 0;
   var scrollSensitivity = 0.0005;
   var cameraSmoothFollow = true;
   var zoomSensitivity = 0.175;
@@ -109,90 +131,93 @@ class Engine {
   var mouseLeftDownFrames = 0;
   var zoom = 1.0;
   var drawCanvasAfterUpdate = true;
-  late BuildContext buildContext;
-  late final sharedPreferences;
-  final keyboardState = <LogicalKeyboardKey, int>{};
-  final themeData = Watch<ThemeData?>(null);
-  final fullScreen = Watch(false);
-  final deviceType = Watch(DeviceType.Computer);
-  final cursorType = Watch(CursorType.Precise);
-  final notifierPaintFrame = ValueNotifier<int>(0);
-  final notifierPaintForeground = ValueNotifier<int>(0);
-  final screen = _Screen();
   var cameraX = 0.0;
   var cameraY = 0.0;
+  var updateFrame = 0;
+  var Screen_Top = 0.0;
+  var Screen_Right = 0.0;
+  var Screen_Bottom = 0.0;
+  var Screen_Left = 0.0;
 
-  /// triggered if the state of the key is down
-  void Function(int keyCode)? onKeyDown;
-  /// triggered the first moment the key is pressed down
-  void Function(int keyCode)? onKeyPressed;
-  /// triggered upon key release
-  void Function(int keyCode)? onKeyUp;
+  final _renderCirclePositions = Float32List(_renderCircleSegments * 6);
 
-  // SETTERS
+  final watchBackgroundColor = Watch(Default_Background_Color);
+  final watchBuildUI = Watch<WidgetBuilder?>(null);
+  final watchTitle = Watch(Default_Title);
+
+  late final durationPerUpdate = Watch(
+      Default_Duration_Per_Update,
+      onChanged: onChangedDurationPerUpdate,
+  );
+
+  late final watchMouseLeftDown = Watch(false, onChanged: _internalOnChangedMouseLeftDown);
+  final mouseRightDown = Watch(false);
+
+  // DEFAULTS
+  static const _renderCircleSegments = 24;
+  static const Default_Background_Color = Colors.black;
+  static const Default_Duration_Per_Update = Duration(milliseconds: 40);
+  static const Default_Title = "DEMO";
+
   set bufferImage(ui.Image image){
     if (_bufferImage == image) return;
     flushBuffer();
     _bufferImage = image;
   }
-  
+
   set bufferBlendMode(BlendMode value){
     if (_bufferBlendMode == value) return;
     flushBuffer();
     _bufferBlendMode = value;
   }
+  
+  void setBlendModeModulate(){
+    bufferBlendMode = BlendMode.modulate;
+  }
+  
+  void setBlendModeDstATop(){
+    bufferBlendMode = BlendMode.dstATop;
+  }
 
   set buildUI(WidgetBuilder? value) => watchBuildUI.value = value;
+
   set title(String value) => watchTitle.value = value;
+
   set backgroundColor(Color value) => watchBackgroundColor.value = value;
 
-  // GETTERS
+  set color(Color value){
+    if (color == value)
+      return;
+
+    paint.color = value;
+    flushBuffer();
+  }
+
+  Color get color => paint.color;
+
   BlendMode get bufferBlendMode => _bufferBlendMode;
+
   double get screenCenterRenderX => (Screen_Left + Screen_Right) * 0.5;
+
   double get screenCenterRenderY => (Screen_Top + Screen_Bottom) * 0.5;
+
   double get screenDiagonalLength => hyp(screen.width, screen.height);
+
   double get screenArea => screen.width * screen.height;
+
   WidgetBuilder? get buildUI => watchBuildUI.value;
+
   String get title => watchTitle.value;
+
   Color get backgroundColor => watchBackgroundColor.value;
+
   bool get isLocalHost => Uri.base.host == 'localhost';
+
   bool get deviceIsComputer => deviceType.value == DeviceType.Computer;
+
   bool get deviceIsPhone => deviceType.value == DeviceType.Phone;
+
   int get paintFrame => notifierPaintFrame.value;
-  bool get initialized => watchInitialized.value;
-
-  // WATCHES
-  final watchBackgroundColor = Watch(Default_Background_Color);
-  final watchBuildUI = Watch<WidgetBuilder?>(null);
-  final watchTitle = Watch(Default_Title);
-  final watchInitialized = Watch(false);
-  final watchDurationPerFrame = Watch(Duration(milliseconds: Default_Milliseconds_Per_Frame));
-  late final watchMouseLeftDown = Watch(false, onChanged: _internalOnChangedMouseLeftDown);
-  final mouseRightDown = Watch(false);
-
-  // DEFAULTS
-  static const Default_Milliseconds_Per_Frame = 30;
-  static const Default_Background_Color = Colors.black;
-  static const Default_Title = "DEMO";
-  // CONSTANTS
-  static const Milliseconds_Per_Second = 1000;
-  static const PI = pi;
-  static const PI_2 = pi + pi;
-  static const PI_Half = pi * 0.5;
-  static const PI_Quarter = pi * 0.25;
-  static const PI_Eight = pi * 0.125;
-  static const PI_SIXTEENTH = pi / 16;
-  static const Ratio_Radians_To_Degrees = 57.2958;
-  static const Ratio_Degrees_To_Radians = 0.0174533;
-  static const GoldenRatio_1_618 = 1.61803398875;
-  static const GoldenRatio_1_381 = 1.38196601125;
-  static const GoldenRatio_0_618 = 0.61803398875;
-  static const GoldenRatio_0_381 = 0.38196601125;
-
-  var Screen_Top = 0.0;
-  var Screen_Right = 0.0;
-  var Screen_Bottom = 0.0;
-  var Screen_Left = 0.0;
 
   bool get keyPressedShiftLeft =>
       keyPressed(KeyCode.Shift_Left);
@@ -239,14 +264,6 @@ class Engine {
       deviceType.value =
       deviceIsComputer ? DeviceType.Phone : DeviceType.Computer;
 
-  static Future<ui.Image> loadImageAsset(String url) async {
-    final byteData = await rootBundle.load(url);
-    final bytes = Uint8List.view(byteData.buffer);
-    final codec = await ui.instantiateImageCodec(bytes);
-    final frameInfo = await codec.getNextFrame();
-    return frameInfo.image;
-  }
-
   TextSpan getTextSpan(String text) {
     var value = textSpans[text];
     if (value != null) return value;
@@ -261,13 +278,13 @@ class Engine {
     textPainter.paint(canvas, Offset(x, y));
   }
 
-  void run({
+  Engine({
     required Function update,
     required DrawCanvas render,
     WidgetBuilder? buildUI,
     String title = Default_Title,
     Function(SharedPreferences sharedPreferences)? init,
-    BasicWidgetBuilder? buildLoadingScreen,
+    WidgetBuilder? buildLoadingScreen,
     ThemeData? themeData,
     GestureTapDownCallback? onTapDown,
     GestureLongPressCallback? onLongPress,
@@ -280,6 +297,7 @@ class Engine {
     Function? onLeftClicked,
     Function? onRightClicked,
     Function? onRightClickReleased,
+    this.dispose,
     Function(int keyCode)? onKeyPressed,
     Function(int keyCode)? onKeyDown,
     Function(int keyCode)? onKeyUp,
@@ -289,13 +307,12 @@ class Engine {
     Function(Object error, StackTrace stack)? onError,
     bool setPathUrlStrategy = true,
     Color backgroundColor = Default_Background_Color,
+    Duration? durationPerUpdate = Default_Duration_Per_Update,
   }){
-    print("this.run()");
     this.watchTitle.value = title;
     this.onInit = init;
     this.onUpdate = update;
     this.watchBuildUI.value = buildUI;
-    this.onBuildLoadingScreen = buildLoadingScreen;
     this.onDrawCanvas = render;
     this.onTapDown = onTapDown;
     this.onLongPress = onLongPress;
@@ -315,21 +332,14 @@ class Engine {
     this.backgroundColor = backgroundColor;
     this.onError = onError;
 
-    if (setPathUrlStrategy){
-      us.setPathUrlStrategy();
+    if (buildLoadingScreen != null){
+      this.loadingScreenBuilder = buildLoadingScreen;
     }
-    WidgetsFlutterBinding.ensureInitialized();
-    runZonedGuarded(_internalInit, _internalOnError);
-  }
 
-  void _internalOnError(Object error, StackTrace stack) {
-      if (onError != null){
-        onError?.call(error, stack);
-        return;
-      }
-      print("Warning no this.onError handler set");
-      print(error);
-      print(stack);
+    // if (setPathUrlStrategy){
+    //   us.setPathUrlStrategy();
+    // }
+    // WidgetsFlutterBinding.ensureInitialized();
   }
 
   void _internalOnPointerScrollEvent(PointerScrollEvent event) {
@@ -365,13 +375,22 @@ class Engine {
   }
 
   void redrawCanvas() {
+    final now = DateTime.now();
+    final duration = now.difference(lastRenderTime);
+    if (duration.inMilliseconds < minMSPerRender){
+      renderFramesSkipped.value++;
+      return;
+    }
+
+    lastRenderTime = now;
     notifierPaintFrame.value++;
+    msRender.value = duration.inMilliseconds;
   }
 
   void refreshPage(){
-    final window = document.window;
+    final window = html.document.window;
     if (window == null) return;
-    final domain = document.domain;
+    final domain = html.document.domain;
     if (domain == null) return;
     window.location.href = domain;
   }
@@ -379,33 +398,23 @@ class Engine {
   void fullscreenToggle()  =>
     fullScreenActive ? fullScreenExit() : fullScreenEnter();
 
-  void fullScreenExit() => document.exitFullscreen();
+  void fullScreenExit() => html.document.exitFullscreen();
 
-  void fullScreenEnter() {
-    final element = document.documentElement;
-    if (element == null) {
-      return;
-    }
-    try {
-      element.requestFullscreen().catchError((error) {});
-    } catch(error) {
-      // ignore
-    }
-  }
+  void fullScreenEnter() => html.document.documentElement?.requestFullscreen();
 
   void panCamera() {
     final positionX = screenToWorldX(mousePositionX);
     final positionY = screenToWorldY(mousePositionY);
     final previousX = screenToWorldX(previousMousePositionX);
     final previousY = screenToWorldY(previousMousePositionY);
-    final diffX = previousX - positionX;
-    final diffY = previousY - positionY;
+    final diffX = (previousX - positionX) * zoom;
+    final diffY = (previousY - positionY) * zoom;
     cameraX += diffX;
     cameraY += diffY;
   }
 
   void disableRightClickContextMenu() {
-    document.onContextMenu.listen((event) => event.preventDefault());
+    html.document.onContextMenu.listen((event) => event.preventDefault());
   }
 
   void setPaintColorWhite() {
@@ -508,7 +517,6 @@ class Engine {
     this.canvas = canvas;
     canvas.scale(zoom, zoom);
     canvas.translate(-cameraX, -cameraY);
-    if (!initialized) return;
     if (onDrawCanvas == null) return;
     batchesRendered = 0;
     batches1Rendered = 0;
@@ -528,12 +536,26 @@ class Engine {
     Duration(milliseconds: convertFramesPerSecondsToMilliseconds(framesPerSecond));
 
   int convertFramesPerSecondsToMilliseconds(int framesPerSecond) =>
-    Milliseconds_Per_Second ~/ framesPerSecond;
+    Duration.millisecondsPerSecond ~/ framesPerSecond;
+
+  var _initCallAmount = 0;
+
+  void enableKeyEventHandler(){
+    SystemChannels.keyEvent.setMessageHandler(_handleRawKeyMessage);
+  }
+
+  void disableKeyEventHandler(){
+    SystemChannels.keyEvent.setMessageHandler(null);
+  }
 
   Future _internalInit() async {
-
-    SystemChannels.keyEvent.setMessageHandler(_handleRawKeyMessage);
-    runApp(_internalBuildApp());
+    _initCallAmount++;
+    print("engine.internalInit()");
+    if (_initCallAmount > 1){
+      print('engine - warning init called ${_initCallAmount}');
+      return;
+    }
+    enableKeyEventHandler();
     _bufferImage = await _generateEmptyImage();
     paint.filterQuality = FilterQuality.none;
     paint.isAntiAlias = false;
@@ -544,7 +566,7 @@ class Engine {
       }
     });
 
-    document.addEventListener('fullscreenchange', _internalOnFullScreenChanged);
+    html.document.addEventListener('fullscreenchange', _internalOnFullScreenChanged);
 
     disableRightClickContextMenu();
     paint.isAntiAlias = false;
@@ -552,27 +574,28 @@ class Engine {
     if (onInit != null) {
       await onInit!(sharedPreferences);
     }
-    updateTimer = Timer.periodic(
-        watchDurationPerFrame.value,
-        _internalOnUpdate,
-    );
-    watchInitialized.value = true;
+    durationPerUpdate.value = Default_Duration_Per_Update;
+
+    if (!internalBuildCreated){
+      internalBuild = _internalBuildApp();
+      internalBuildCreated = true;
+    }
+    app.value = internalBuild;
+
+
   }
 
   void _internalOnFullScreenChanged(event){
     fullScreen.value = fullScreenActive;
   }
 
-  void resetUpdateTimer(){
-    updateTimer?.cancel();
-    updateTimer = Timer.periodic(
-      watchDurationPerFrame.value,
-      _internalOnUpdate,
-    );
-    onUpdateTimerReset?.call();
-  }
-
   void _internalOnUpdate(Timer timer){
+    final now = DateTime.now();
+    final updateDuration = now.difference(lastUpdateTime);
+    msUpdate.value = updateDuration.inMilliseconds;
+    lastUpdateTime = now;
+
+    updateFrame++;
     Screen_Left = cameraX;
     Screen_Right = cameraX + (screen.width / zoom);
     Screen_Top = cameraY;
@@ -596,7 +619,7 @@ class Engine {
   }
 
   void setFramesPerSecond(int framesPerSecond) =>
-     watchDurationPerFrame.value = buildDurationFramesPerSecond(framesPerSecond);
+     durationPerUpdate.value = buildDurationFramesPerSecond(framesPerSecond);
 
   ui.Image get bufferImage => _bufferImage;
 
@@ -649,162 +672,201 @@ class Engine {
 
   void flushBuffer() {
     batchesRendered++;
-    if (bufferIndex == 0) return;
+
+    if (this.bufferIndex == 0)
+      return;
+
     var flushIndex = 0;
+
+    final bufferDst = this.bufferDst;
+    final bufferSrc = this.bufferSrc;
+    final bufferClr = this.bufferClr;
+    final image = this.bufferImage;
+    final blendMode = this.bufferBlendMode;
+    final paint = this.paint;
+    final canvas = this.canvas;
+
+    final bufferIndex = this.bufferIndex;
+
     while (flushIndex < bufferIndex) {
       final remaining = bufferIndex - flushIndex;
-
-      if (remaining == 0) {
-        throw Exception();
-      }
+      assert (remaining > 0);
 
       if (remaining == 1) {
         final f = flushIndex << 2;
         _bufferClr1[0] = bufferClr[flushIndex];
-        _bufferDst1[0] = bufferDst[f];
-        _bufferDst1[1] = bufferDst[f + 1];
-        _bufferDst1[2] = bufferDst[f + 2];
-        _bufferDst1[3] = bufferDst[f + 3];
-        _bufferSrc1[0] = bufferSrc[f];
-        _bufferSrc1[1] = bufferSrc[f + 1];
-        _bufferSrc1[2] = bufferSrc[f + 2];
-        _bufferSrc1[3] = bufferSrc[f + 3];
-        canvas.drawRawAtlas(_bufferImage, _bufferDst1, _bufferSrc1, _bufferClr1, _bufferBlendMode, null, spritePaint);
-        bufferIndex = 0;
+        _bufferDst1.setRange(0, 4, bufferDst, f);
+        _bufferSrc1.setRange(0, 4, bufferSrc, f);
+        canvas.drawRawAtlas(
+          image,
+          _bufferDst1,
+          _bufferSrc1,
+          _bufferClr1,
+          blendMode,
+          null,
+          paint,
+        );
+        this.bufferIndex = 0;
         batches1Rendered++;
         return;
       }
 
       if (remaining < 4) {
         for (var i = 0; i < 2; i++) {
-          final j = i << 2;
+          final start = i << 2;
+          final end = start + 4;
           final f = flushIndex << 2;
           _bufferClr2[i] = bufferClr[flushIndex];
-          _bufferDst2[j] = bufferDst[f];
-          _bufferDst2[j + 1] = bufferDst[f + 1];
-          _bufferDst2[j + 2] = bufferDst[f + 2];
-          _bufferDst2[j + 3] = bufferDst[f + 3];
-          _bufferSrc2[j] = bufferSrc[f];
-          _bufferSrc2[j + 1] = bufferSrc[f + 1];
-          _bufferSrc2[j + 2] = bufferSrc[f + 2];
-          _bufferSrc2[j + 3] = bufferSrc[f + 3];
+          _bufferDst2.setRange(start, end, bufferDst, f);
+          _bufferSrc2.setRange(start, end, bufferSrc, f);
           flushIndex++;
         }
-        canvas.drawRawAtlas(_bufferImage, _bufferDst2, _bufferSrc2, _bufferClr2, _bufferBlendMode, null, spritePaint);
+        canvas.drawRawAtlas(
+          image,
+          _bufferDst2,
+          _bufferSrc2,
+          _bufferClr2,
+          blendMode,
+          null,
+          paint,
+        );
         batches2Rendered++;
         continue;
       }
 
       if (remaining < 8) {
+        final clr = _bufferClr4;
+        final dst = _bufferDst4;
+        final src = _bufferSrc4;
         for (var i = 0; i < 4; i++) {
-          final j = i << 2;
+          final start = i << 2;
+          final end = start + 4;
           final f = flushIndex << 2;
-          _bufferClr4[i] = bufferClr[flushIndex];
-          _bufferDst4[j] = bufferDst[f];
-          _bufferDst4[j + 1] = bufferDst[f + 1];
-          _bufferDst4[j + 2] = bufferDst[f + 2];
-          _bufferDst4[j + 3] = bufferDst[f + 3];
-          _bufferSrc4[j] = bufferSrc[f];
-          _bufferSrc4[j + 1] = bufferSrc[f + 1];
-          _bufferSrc4[j + 2] = bufferSrc[f + 2];
-          _bufferSrc4[j + 3] = bufferSrc[f + 3];
+          clr[i] = bufferClr[flushIndex];
+          dst.setRange(start, end, bufferDst, f);
+          src.setRange(start, end, bufferSrc, f);
           flushIndex++;
         }
-        canvas.drawRawAtlas(_bufferImage, _bufferDst4, _bufferSrc4, _bufferClr4, _bufferBlendMode, null, spritePaint);
+        canvas.drawRawAtlas(
+          image,
+          dst,
+          src,
+          clr,
+          blendMode,
+          null,
+          paint,
+        );
         batches4Rendered++;
         continue;
       }
 
       if (remaining < 16) {
+        final clr = _bufferClr8;
+        final dst = _bufferDst8;
+        final src = _bufferSrc8;
         for (var i = 0; i < 8; i++) {
-          final j = i << 2;
+          final start = i << 2;
+          final end = start + 4;
           final f = flushIndex << 2;
-          _bufferClr8[i] = bufferClr[flushIndex];
-          _bufferDst8[j] = bufferDst[f];
-          _bufferDst8[j + 1] = bufferDst[f + 1];
-          _bufferDst8[j + 2] = bufferDst[f + 2];
-          _bufferDst8[j + 3] = bufferDst[f + 3];
-          _bufferSrc8[j] = bufferSrc[f];
-          _bufferSrc8[j + 1] = bufferSrc[f + 1];
-          _bufferSrc8[j + 2] = bufferSrc[f + 2];
-          _bufferSrc8[j + 3] = bufferSrc[f + 3];
+          clr[i] = bufferClr[flushIndex];
+          dst.setRange(start, end, bufferDst, f);
+          src.setRange(start, end, bufferSrc, f);
           flushIndex++;
         }
-        canvas.drawRawAtlas(_bufferImage, _bufferDst8, _bufferSrc8, _bufferClr8, _bufferBlendMode, null, spritePaint);
+        canvas.drawRawAtlas(
+          image,
+          dst,
+          src,
+          clr,
+          blendMode,
+          null,
+          paint,
+        );
         batches8Rendered++;
         continue;
       }
 
       if (remaining < 32) {
+        final clr = _bufferClr16;
+        final dst = _bufferDst16;
+        final src = _bufferSrc16;
         for (var i = 0; i < 16; i++) {
-          final j = i << 2;
+          final start = i << 2;
+          final end = start + 4;
           final f = flushIndex << 2;
-          _bufferClr16[i] = bufferClr[flushIndex];
-          _bufferDst16[j] = bufferDst[f];
-          _bufferDst16[j + 1] = bufferDst[f + 1];
-          _bufferDst16[j + 2] = bufferDst[f + 2];
-          _bufferDst16[j + 3] = bufferDst[f + 3];
-          _bufferSrc16[j] = bufferSrc[f];
-          _bufferSrc16[j + 1] = bufferSrc[f + 1];
-          _bufferSrc16[j + 2] = bufferSrc[f + 2];
-          _bufferSrc16[j + 3] = bufferSrc[f + 3];
+          clr[i] = bufferClr[flushIndex];
+          dst.setRange(start, end, bufferDst, f);
+          src.setRange(start, end, bufferSrc, f);
           flushIndex++;
         }
-        canvas.drawRawAtlas(_bufferImage, _bufferDst16, _bufferSrc16, _bufferClr16, _bufferBlendMode, null, spritePaint);
+        canvas.drawRawAtlas(
+          image,
+          dst,
+          src,
+          clr,
+          blendMode,
+          null,
+          paint,
+        );
         batches16Rendered++;
         continue;
       }
 
       if (remaining < 64) {
+        final clr = _bufferClr32;
+        final dst = _bufferDst32;
+        final src = _bufferSrc32;
         for (var i = 0; i < 32; i++) {
-          final j = i << 2;
+          final start = i << 2;
+          final end = start + 4;
           final f = flushIndex << 2;
-          _bufferClr32[i] = bufferClr[flushIndex];
-          _bufferDst32[j] = bufferDst[f];
-          _bufferDst32[j + 1] = bufferDst[f + 1];
-          _bufferDst32[j + 2] = bufferDst[f + 2];
-          _bufferDst32[j + 3] = bufferDst[f + 3];
-          _bufferSrc32[j] = bufferSrc[f];
-          _bufferSrc32[j + 1] = bufferSrc[f + 1];
-          _bufferSrc32[j + 2] = bufferSrc[f + 2];
-          _bufferSrc32[j + 3] = bufferSrc[f + 3];
+          clr[i] = bufferClr[flushIndex];
+          dst.setRange(start, end, bufferDst, f);
+          src.setRange(start, end, bufferSrc, f);
           flushIndex++;
         }
-        canvas.drawRawAtlas(_bufferImage, _bufferDst32, _bufferSrc32, _bufferClr32, _bufferBlendMode, null, spritePaint);
+        canvas.drawRawAtlas(
+          image,
+          dst,
+          src,
+          clr,
+          blendMode,
+          null,
+          paint,
+        );
         batches32Rendered++;
         continue;
       }
 
       if (remaining < 128) {
+        final dst64 = _bufferDst64;
+        final src64 = _bufferSrc64;
+        final clr64 = _bufferClr64;
         for (var i = 0; i < 64; i++) {
-          final j = i << 2;
+          final start = i << 2;
+          final end = start + 4;
           final f = flushIndex << 2;
-          _bufferClr64[i] = bufferClr[flushIndex];
-          _bufferDst64[j] = bufferDst[f];
-          _bufferDst64[j + 1] = bufferDst[f + 1];
-          _bufferDst64[j + 2] = bufferDst[f + 2];
-          _bufferDst64[j + 3] = bufferDst[f + 3];
-          _bufferSrc64[j] = bufferSrc[f];
-          _bufferSrc64[j + 1] = bufferSrc[f + 1];
-          _bufferSrc64[j + 2] = bufferSrc[f + 2];
-          _bufferSrc64[j + 3] = bufferSrc[f + 3];
+          clr64[i] = bufferClr[flushIndex];
+          dst64.setRange(start, end, bufferDst, f);
+          src64.setRange(start, end, bufferSrc, f);
           flushIndex++;
         }
-        canvas.drawRawAtlas(_bufferImage, _bufferDst64, _bufferSrc64, _bufferClr64, _bufferBlendMode, null, spritePaint);
+        canvas.drawRawAtlas(
+          image,
+          dst64,
+          src64,
+          clr64,
+          blendMode,
+          null,
+          paint,
+        );
         batches64Rendered++;
         continue;
       }
 
       throw Exception();
     }
-    bufferIndex = 0;
-  }
-
-  void flushAll(){
-    batchesRendered++;
-    canvas.drawRawAtlas(_bufferImage, bufferDst, bufferSrc, bufferClr, _bufferBlendMode, null, spritePaint);
-    bufferIndex = 0;
-    batches128Rendered++;
+    this.bufferIndex = 0;
   }
 
   void renderSprite({
@@ -821,17 +883,17 @@ class Engine {
     int color = 1,
   }){
     bufferImage = image;
-    final f = bufferIndex << 2;
-    bufferClr[bufferIndex] = color;
-    bufferSrc[f] = srcX;
-    bufferSrc[f + 1] = srcY;
-    bufferSrc[f + 2] = srcX + srcWidth;
-    bufferSrc[f + 3] = srcY + srcHeight;
-    bufferDst[f] = scale;
-    bufferDst[f + 1] = 0;
-    bufferDst[f + 2] = dstX - (srcWidth * anchorX * scale);
-    bufferDst[f + 3] = dstY - (srcHeight * anchorY * scale);
-    incrementBufferIndex();
+    render(
+        color: color,
+        srcLeft: srcX,
+        srcTop: srcY,
+        srcRight: srcX + srcWidth,
+        srcBottom: srcY + srcHeight,
+        scale: scale,
+        rotation: 0,
+        dstX: dstX - (srcWidth * anchorX * scale),
+        dstY: dstY - (srcHeight * anchorY * scale),
+    );
   }
 
   /// The anchor determines the point around which the sprite is rotated
@@ -870,43 +932,48 @@ class Engine {
     final adjX2 = opp(rotation - piHalf, scaledWidth);
 
     bufferImage = image;
-    final f = bufferIndex << 2;
-    bufferClr[bufferIndex] = color;
-    bufferSrc[f + 0] = srcX;
-    bufferSrc[f + 1] = srcY;
-    bufferSrc[f + 2] = srcX + srcWidth;
-    bufferSrc[f + 3] = srcY + srcHeight;
-    bufferDst[f + 0] = cos(rotation) * scale;
-    bufferDst[f + 1] = sin(rotation) * scale;
-    bufferDst[f + 2] = tx + adjX2 + adjX;
-    bufferDst[f + 3] = ty - adjY2 + adjY;
-    incrementBufferIndex();
+    render(
+        color: color,
+        srcLeft: srcX,
+        srcTop: srcY,
+        srcRight: srcX + srcWidth,
+        srcBottom: srcY + srcHeight,
+        scale: cos(rotation) * scale,
+        rotation: sin(rotation) * scale,
+        dstX: tx + adjX2 + adjX,
+        dstY: ty - adjY2 + adjY,
+    );
   }
 
-  void renderExternalCanvas({
-    required Canvas canvas,
-    required ui.Image image,
-    required double srcX,
-    required double srcY,
-    required double srcWidth,
-    required double srcHeight,
+  void render({
+    required int color,
+    required double srcLeft,
+    required double srcTop,
+    required double srcRight,
+    required double srcBottom,
+    required double scale,
+    required double rotation,
     required double dstX,
     required double dstY,
-    double anchorX = 0.5,
-    double anchorY = 0.5,
-    double scale = 1.0,
-    int color = 1,
   }){
-    _bufferClr1[0] = color;
-    _bufferSrc1[0] = srcX;
-    _bufferSrc1[1] = srcY;
-    _bufferSrc1[2] = srcX + srcWidth;
-    _bufferSrc1[3] = srcY + srcHeight;
-    _bufferDst1[0] = scale;
-    _bufferDst1[1] = 0;
-    _bufferDst1[2] = dstX - (srcWidth * anchorX * scale);
-    _bufferDst1[3] = dstY - (srcHeight * anchorY * scale); // scale
-    canvas.drawRawAtlas(image, _bufferDst1, _bufferSrc1, _bufferClr1, _bufferBlendMode, null, paint);
+    final index = bufferIndex;
+    final i = index << 2;
+    final src = this.bufferSrc;
+    final dst = this.bufferDst;
+    bufferClr[index] = color;
+    src[i] = srcLeft;
+    src[i + 1] = srcTop;
+    src[i + 2] = srcRight;
+    src[i + 3] = srcBottom;
+    dst[i] = scale;
+    dst[i + 1] = rotation;
+    dst[i + 2] = dstX;
+    dst[i + 3] = dstY;
+
+    bufferIndex++;
+    if (bufferIndex == 128) {
+      flushAll();
+    }
   }
 
   void renderCircle(double x, double y, double radius, Color color) {
@@ -916,6 +983,33 @@ class Engine {
   void renderCircleOffset(Offset offset, double radius, Color color) {
     setPaintColor(color);
     canvas.drawCircle(offset, radius, paint);
+  }
+
+  void renderCircleFilled({
+    required double radius,
+    required double x,
+    required double y,
+  }){
+    final angle = (2 * 3.14159) / _renderCircleSegments;
+    var j = 0;
+    for (int i = 0; i < _renderCircleSegments; i++) {
+      _renderCirclePositions[j++] = x;
+      _renderCirclePositions[j++] = y;
+      _renderCirclePositions[j++] = x + adj(angle * i, radius);
+      _renderCirclePositions[j++] = y + opp(angle * i, radius);
+      _renderCirclePositions[j++] = x + adj(angle * (i + 1), radius);
+      _renderCirclePositions[j++] = y + opp(angle * (i + 1), radius);
+    }
+
+    final vertices = ui.Vertices.raw(
+      ui.VertexMode.triangles,
+      _renderCirclePositions,
+      textureCoordinates: null,
+      colors: null,
+      indices: null,
+    );
+
+    canvas.drawVertices(vertices, ui.BlendMode.srcOver, paint);
   }
 
   void renderLine(double x1, double y1, double x2, double y2){
@@ -964,37 +1058,44 @@ class Engine {
     return const {'handled': true};
   }
 
-
-  Widget _internalBuildApp(){
-    return WatchBuilder(themeData, (ThemeData? themeData){
-      return MaterialApp(
-        title: title,
-        // routes: this.routes ?? {},
-        theme: themeData,
-        home: Scaffold(
-          body: WatchBuilder(watchInitialized, (bool value) {
-            if (!value) {
-              return onBuildLoadingScreen != null ? onBuildLoadingScreen!() : Center(child: Text("Loading"));
-            }
-            return LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints constraints) {
-                _internalSetScreenSize(constraints.maxWidth, constraints.maxHeight);
-                buildContext = context;
-                return Stack(
-                  children: [
-                    _internalBuildCanvas(context),
-                    WatchBuilder(watchBuildUI, (WidgetBuilder? buildUI)
-                    => buildUI != null ? buildUI(context) : const SizedBox()
-                    )
-                  ],
-                );
-              },
+  Widget _internalBuildApp() => WatchBuilder(themeData, (ThemeData? themeData) =>
+      CustomTicker(
+        onTrick: _onTickElapsed,
+        onDispose: _internalDispose,
+        child: Builder(
+          builder: (context) {
+            print('MaterialApp()');
+            return MaterialApp(
+              title: title,
+              theme: themeData,
+              home: Scaffold(
+                body: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    _internalSetScreenSize(constraints.maxWidth, constraints.maxHeight);
+                    buildContext = context;
+                    return Stack(
+                      children: [
+                        _internalBuildCanvas(context),
+                        WatchBuilder(watchBuildUI, (WidgetBuilder? buildUI)
+                        => buildUI != null ? buildUI(context) : const SizedBox()
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              debugShowCheckedModeBanner: false,
             );
-          }),
+          }
         ),
-        debugShowCheckedModeBanner: false,
-      );
-    });
+      ));
+
+  void _onTickElapsed(Duration duration) => redrawCanvas();
+
+  void _internalDispose(){
+    print("engine.dispose()");
+    // updateTimer?.cancel();
+    dispose?.call();
   }
 
   Widget _internalBuildCanvas(BuildContext context) {
@@ -1013,22 +1114,34 @@ class Engine {
           onLongPress: _internalOnLongPress,
           onLongPressDown: _internalOnLongPressDown,
           onSecondaryTapDown: _internalOnSecondaryTapDown,
-          child: WatchBuilder(watchBackgroundColor, (Color backgroundColor){
-            return Container(
-                color: backgroundColor,
-                width: screen.width,
-                height: screen.height,
-                child: CustomPaint(
-                  isComplex: true,
-                  willChange: true,
-                  painter: _EnginePainter(repaint: notifierPaintFrame, engine: this),
-                  foregroundPainter: _EngineForegroundPainter(
-                      repaint: notifierPaintForeground,
-                      engine: this,
-                  ),
-                )
-            );
-          })),
+          child: WatchBuilder(watchBackgroundColor, (Color backgroundColor) =>
+            MouseRegion(
+              onEnter: (_) {
+                mouseOverCanvas = true;
+                onMouseEnterCanvas?.call();
+              },
+              onExit: (_) {
+                mouseOverCanvas = false;
+                onMouseExitCanvas?.call();
+              },
+              child: Container(
+                  color: backgroundColor,
+                  width: screen.width,
+                  height: screen.height,
+                  child: CustomPaint(
+                    isComplex: true,
+                    willChange: true,
+                    painter: _EnginePainter(
+                        repaint: notifierPaintFrame,
+                        engine: this,
+                    ),
+                    foregroundPainter: _EngineForegroundPainter(
+                        repaint: notifierPaintForeground,
+                        engine: this,
+                    ),
+                  )
+              ),
+            ))),
     );
 
     return WatchBuilder(this.cursorType, (CursorType cursorType) =>
@@ -1038,65 +1151,6 @@ class Engine {
         )
     );
   }
-
-
-  static void insertionSort<E>(List<E> list, {
-    required bool Function(E, E) compare,
-    int start = 0,
-    int? end,
-  }) {
-    end ??= list.length;
-    for (var pos = start + 1; pos < end; pos++) {
-      var min = start;
-      var max = pos;
-      var element = list[pos];
-      while (min < max) {
-        var mid = min + ((max - min) >> 1);
-        // var comparison = ;
-        if (compare(element, list[mid])) {
-          max = mid;
-        } else {
-          min = mid + 1;
-        }
-      }
-      list.setRange(min + 1, pos + 1, list, min);
-      list[min] = element;
-    }
-  }
-
-
-  double calculateRadianDifference(double a, double b){
-    final diff = b - a;
-    if (diff > pi) {
-      return -(PI_2 - diff);
-    }
-    if (diff < -pi){
-      return PI_2 + diff;
-    }
-    return diff;
-  }
-
-  static bool isNullOrEmpty(String? value) =>
-     value == null || value.isEmpty;
-
-  static int randomInt(int min, int max) => random.nextInt(max - min) + min;
-
-  /// Returns a random radian between 0 and pi2
-  static double randomAngle() {
-    const pi2 = pi + pi;
-    return random.nextDouble() * pi2;
-  }
-
-  static T randomItem<T>(List<T> list) => list[random.nextInt(list.length)];
-
-  static double randomGiveOrTake(num value) =>
-    randomBetween(-value, value);
-
-  static double randomBetween(num a, num b) =>
-    (random.nextDouble() * (b - a)) + a;
-
-  static bool randomBool() =>
-    random.nextDouble() > 0.5;
 
   SystemMouseCursor _internalMapCursorTypeToSystemMouseCursor(CursorType value){
     switch (value) {
@@ -1116,7 +1170,7 @@ class Engine {
   void drawLine(double x1, double y1, double x2, double y2) =>
     canvas.drawLine(Offset(x1, y1), Offset(x2, y2), paint);
 
-  bool get fullScreenActive => document.fullscreenElement != null;
+  bool get fullScreenActive => html.document.fullscreenElement != null;
 
   double screenToWorldX(double value)  =>
     cameraX + value / zoom;
@@ -1141,24 +1195,24 @@ class Engine {
      distance(mouseWorldX, mouseWorldY, x, y);
 
   void requestPointerLock() {
-    var canvas = document.getElementById('canvas');
+    var canvas = html.document.getElementById('canvas');
     if (canvas != null) {
       canvas.requestPointerLock();
     }
   }
 
    void setDocumentTitle(String value){
-    document.title = value;
+     html.document.title = value;
   }
 
   void setFavicon(String filename){
-    final link = document.querySelector("link[rel*='icon']");
+    final link = html.document.querySelector("link[rel*='icon']");
     if (link == null) return;
     print("setFavicon($filename)");
     link.setAttribute("type", 'image/x-icon');
     link.setAttribute("rel", 'shortcut icon');
     link.setAttribute("href", filename);
-    document.getElementsByTagName('head')[0].append(link);
+    html.document.getElementsByTagName('head')[0].append(link);
   }
 
   void setCursorWait(){
@@ -1170,47 +1224,32 @@ class Engine {
   }
 
   void setCursorByName(String name){
-    final body = document.body;
+    final body = html.document.body;
     if (body == null) return;
     body.style.cursor = name;
   }
 
-  static int linerInterpolationInt(int a, int b, double t) =>
-      (a * (1.0 - t) + b * t).toInt();
-
-  void downloadString({
-    required String contents,
-    required String filename,
-  }) =>
-      downloadBytes(utf8.encode(contents), name: filename);
-
-  void downloadBytes(
-      List<int> bytes, {
-        required String name,
-      }) {
-    final _base64 = base64Encode(bytes);
-    final anchor =
-    AnchorElement(href: 'data:application/octet-stream;base64,$_base64')
-      ..target = 'blank';
-    anchor.download = name;
-    document.body?.append(anchor);
-    anchor.click();
-    anchor.remove();
-    return;
+  void flushAll(){
+    batchesRendered++;
+    canvas.drawRawAtlas(
+      _bufferImage,
+      bufferDst,
+      bufferSrc,
+      bufferClr,
+      _bufferBlendMode,
+      null,
+      paint,
+    );
+    bufferIndex = 0;
+    batches128Rendered++;
   }
 
-  String enumString(dynamic value){
-    final text = value.toString();
-    final index = text.indexOf(".");
-    if (index == -1) return text;
-    return text.substring(index + 1, text.length).replaceAll("_", " ");
-  }
+  bool isOnscreen(double x, double y, {required double padding}) {
 
-  void incrementBufferIndex(){
-    this.bufferIndex++;
-    if (this.bufferIndex == 128) {
-      this.flushAll();
-    }
+    if (x < Screen_Left - padding || x > Screen_Right + padding)
+      return false;
+
+    return y > Screen_Top - padding && y < Screen_Bottom + padding;
   }
 
   Future<ui.Image> _generateEmptyImage() async {
@@ -1221,31 +1260,6 @@ class Engine {
     return await picture.toImage(1, 1);
   }
 
-  Widget buildAtlasImageButton({
-    required ui.Image image,
-    required double srcX,
-    required double srcY,
-    required double srcWidth,
-    required double srcHeight,
-    required Function? action,
-    int color = 1,
-    double scale = 1.0,
-    String hint = "",
-  }) =>
-      buildOnPressed(
-        action: action,
-        hint: hint,
-        child: buildAtlasImage(
-          image: image,
-          srcX: srcX,
-          srcY: srcY,
-          srcWidth: srcWidth,
-          srcHeight: srcHeight,
-          scale: scale,
-          color: color,
-        ),
-      );
-
   Widget buildAtlasImage({
     required ui.Image image,
     required double srcX,
@@ -1253,7 +1267,7 @@ class Engine {
     required double srcWidth,
     required double srcHeight,
     double scale = 1.0,
-    int color = 1,
+    int? color,
   }) =>
       Container(
         alignment: Alignment.center,
@@ -1261,7 +1275,7 @@ class Engine {
         height: srcHeight * scale,
         child: buildCanvas(
             paint: (Canvas canvas, Size size) =>
-                this.renderExternalCanvas(
+                renderCanvas(
                   canvas: canvas,
                   image: image,
                   srcX: srcX,
@@ -1271,57 +1285,81 @@ class Engine {
                   dstX: 0,
                   dstY: 0,
                   scale: scale,
-                  color: color,
+                  color: color ?? 1,
+                  blendMode: color != null ? BlendMode.modulate : BlendMode.dstATop,
                 )
         ),
       );
 
-  Widget buildOnPressed({
-    required Widget child,
-    Function? action,
-    Function? onRightClick,
-    dynamic hint,
-  }) {
-    final widget = MouseRegion(
-        cursor: action != null
-            ? SystemMouseCursors.click
-            : SystemMouseCursors.forbidden,
-        child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            child: child,
-            onSecondaryTap: onRightClick != null ? (){
-              onRightClick.call();
-            } : null,
-            onTap: (){
-              if (action == null) return;
-              action();
-            }
-        ));
-
-    if (hint == null) return widget;
-
-    return Tooltip(
-      message: hint.toString(),
-      child: widget,
-    );
-  }
-
   Widget buildCanvas({
     required PaintCanvas paint,
     ValueNotifier<int>? frame,
-    ShouldRepaint? shouldRepaint,
-  }){
-    return CustomPaint(
+  })=> CustomPaint(
       painter: CustomPainterPainter(
           paint,
-          shouldRepaint ?? _doNotRepaint,
           frame
       ),
     );
+
+
+  late final Watch<Widget> app;
+  late WatchBuilder<Widget> appBuilder;
+  var appInitialized = false;
+
+  late Widget internalBuild;
+  var internalBuildCreated = false;
+  var buildingInternal = false;
+
+  @override
+  Widget build(BuildContext context) {
+    print("engine.build()");
+
+
+    if (!appInitialized){
+      print('engine.initializing()');
+      appInitialized = true;
+
+      app = Watch<Widget>(MaterialApp(
+        title: title,
+        theme: themeData.value,
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          body: loadingScreenBuilder(context),
+        ),
+      ));
+
+      appBuilder = WatchBuilder(app, (t) => t);
+
+      _internalInit().catchError((error){
+        app.value = MaterialApp(
+          title: title,
+          theme: themeData.value,
+          debugShowCheckedModeBanner: false,
+          home: Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(child: Text(error.toString(), style: TextStyle(color: Colors.white))),
+          ),
+        );
+      });
+    } else {
+      print('engine.build() already initialized');
+      if (!internalBuildCreated) {
+        internalBuild = _internalBuildApp();
+        internalBuildCreated = true;
+      }
+      app.value = internalBuild;
+    }
+    return appBuilder;
   }
 
-  bool _doNotRepaint(CustomPainter oldDelegate) {
-    return false;
+  void onChangedDurationPerUpdate(Duration duration){
+    print('engine.onChangedDurationPerUpdate(milliseconds: ${duration.inMilliseconds})');
+    updateTimer?.cancel();
+    updateTimer = Timer.periodic(
+      duration,
+      _internalOnUpdate,
+    );
+    onUpdateDurationChanged?.call();
   }
 }
 
@@ -1335,7 +1373,7 @@ typedef CallbackOnScreenSizeChanged = void Function(
 // global typedefs
 typedef DrawCanvas(Canvas canvas, Size size);
 
-class _Screen {
+class Screen {
   var initialized = false;
   var width = 0.0;
   var height = 0.0;
@@ -1356,13 +1394,6 @@ class DeviceType {
   }
 }
 
-enum CursorType {
-  None,
-  Basic,
-  Forbidden,
-  Precise,
-  Click,
-}
 
 class _EnginePainter extends CustomPainter {
 
@@ -1399,23 +1430,19 @@ class _EngineForegroundPainter extends CustomPainter {
 // TYPEDEFS
 typedef BasicWidgetBuilder = Widget Function();
 typedef PaintCanvas = void Function(Canvas canvas, Size size);
-typedef ShouldRepaint = bool Function(CustomPainter oldDelegate);
 
 class CustomPainterPainter extends CustomPainter {
 
   final PaintCanvas paintCanvas;
-  final ShouldRepaint doRepaint;
 
-  CustomPainterPainter(this.paintCanvas, this.doRepaint, ValueNotifier<int>? frame) : super(repaint: frame);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    return paintCanvas(canvas, size);
-  }
+  CustomPainterPainter(this.paintCanvas, ValueNotifier<int>? frame) : super(repaint: frame);
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return doRepaint(oldDelegate);
-  }
+  void paint(Canvas canvas, Size size) => paintCanvas(canvas, size);
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+
 }
+
 
