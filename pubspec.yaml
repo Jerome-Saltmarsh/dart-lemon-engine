@@ -16,7 +16,3 @@ dependencies:
   image: ^4.0.17
 
 
-dev_dependencies:
-  test: ^1.16.0
-
-

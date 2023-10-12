@@ -50,7 +50,7 @@ class Engine extends StatelessWidget {
   /// override safe
   Function(SharedPreferences sharedPreferences)? onInit;
   /// override safe
-  Function? onUpdate;
+  Function(double delta)? onUpdate;
   /// override safe
   /// gets called when update timer is changed
   Function? onUpdateDurationChanged;
@@ -279,7 +279,7 @@ class Engine extends StatelessWidget {
   }
 
   Engine({
-    required Function update,
+    required Function(double delta) update,
     required DrawCanvas render,
     WidgetBuilder? buildUI,
     String title = Default_Title,
@@ -607,7 +607,9 @@ class Engine extends StatelessWidget {
       screenArea < 400000
         ? DeviceType.Phone
         : DeviceType.Computer;
-    onUpdate?.call();
+
+    final durationPerUpdateMS = durationPerUpdate.value.inMilliseconds;
+    onUpdate?.call(updateDuration.inMilliseconds / (durationPerUpdateMS > 0 ? durationPerUpdateMS : 1));
     final sX = screenCenterWorldX;
     final sY = screenCenterWorldY;
     final zoomDiff = targetZoom - zoom;
@@ -1116,6 +1118,7 @@ class Engine extends StatelessWidget {
           onSecondaryTapDown: _internalOnSecondaryTapDown,
           child: WatchBuilder(watchBackgroundColor, (Color backgroundColor) =>
             MouseRegion(
+              hitTestBehavior: HitTestBehavior.deferToChild,
               onEnter: (_) {
                 mouseOverCanvas = true;
                 onMouseEnterCanvas?.call();
@@ -1220,13 +1223,22 @@ class Engine extends StatelessWidget {
   }
 
   void setCursorPointer(){
+    setCursorByName('pointer');
+  }
+
+  void setCursorDefault(){
     setCursorByName('default');
+  }
+
+  void setCursorCrosshair(){
+    setCursorByName('crosshair');
   }
 
   void setCursorByName(String name){
     final body = html.document.body;
     if (body == null) return;
     body.style.cursor = name;
+    print("body.style.cursor: ${body.style.cursor}");
   }
 
   void flushAll(){
