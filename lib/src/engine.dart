@@ -52,9 +52,6 @@ class Engine extends StatelessWidget {
   /// override safe
   Function(double delta)? onUpdate;
   /// override safe
-  /// gets called when update timer is changed
-  Function? onUpdateDurationChanged;
-  /// override safe
   Function? onMouseEnterCanvas;
   /// override safe
   Function? onMouseExitCanvas;
@@ -144,13 +141,8 @@ class Engine extends StatelessWidget {
   final watchBackgroundColor = Watch(Default_Background_Color);
   final watchBuildUI = Watch<WidgetBuilder?>(null);
   final watchTitle = Watch(Default_Title);
-
-  late final durationPerUpdate = Watch(
-      Default_Duration_Per_Update,
-      onChanged: onChangedDurationPerUpdate,
-  );
-
-  late final watchMouseLeftDown = Watch(false, onChanged: _internalOnChangedMouseLeftDown);
+  final durationPerUpdate = Watch(Duration.zero);
+  final watchMouseLeftDown = Watch(false);
   final mouseRightDown = Watch(false);
 
   // DEFAULTS
@@ -309,6 +301,8 @@ class Engine extends StatelessWidget {
     Color backgroundColor = Default_Background_Color,
     Duration? durationPerUpdate = Default_Duration_Per_Update,
   }){
+    this.watchMouseLeftDown.onChanged(_internalOnChangedMouseLeftDown);
+    this.durationPerUpdate.onChanged(onChangedDurationPerUpdate);
     this.watchTitle.value = title;
     this.onInit = init;
     this.onUpdate = update;
@@ -1371,7 +1365,6 @@ class Engine extends StatelessWidget {
       duration,
       _internalOnUpdate,
     );
-    onUpdateDurationChanged?.call();
   }
 }
 

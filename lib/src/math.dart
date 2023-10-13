@@ -25,5 +25,3 @@ double adj(double radians, double magnitude) =>
 double opp(double radians, double magnitude) =>
     sin(radians) * magnitude;
 
-T clam<T extends num>(T value, T min, T max) =>
-    value < min ? min : value > max ? max : value;
