@@ -1096,7 +1096,7 @@ class Engine extends StatelessWidget {
 
   void _internalDispose(){
     print("engine.dispose()");
-    // updateTimer?.cancel();
+    updateTimer?.cancel();
     dispose?.call();
   }
 
