@@ -12,13 +12,13 @@ import 'package:lemon_watch/src.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:universal_html/html.dart' as html;
 
-class Engine extends StatelessWidget {
+class LemonEngine extends StatelessWidget {
 
-  // HOOKS
-  /// the following hooks are designed to be easily swapped in and out without inheritance
-  /// override safe. run this snippet inside your initialization code.
-  /// this.onTapDown = (TapDownDetails details) => print('tap detected');
-  GestureTapDownCallback? onTapDown;
+  /// override safe
+  void onTapDown(TapDownDetails details) {
+
+  }
+
   /// override safe
   GestureTapCallback? onTap;
   /// override safe
@@ -55,8 +55,6 @@ class Engine extends StatelessWidget {
   Function? onMouseEnterCanvas;
   /// override safe
   Function? onMouseExitCanvas;
-  /// triggered if the state of the key is down
-  void Function(int keyCode)? onKeyDown;
   /// triggered the first moment the key is pressed down
   void Function(int keyCode)? onKeyPressed;
   /// triggered upon key release
@@ -104,6 +102,8 @@ class Engine extends StatelessWidget {
   late final sharedPreferences;
 
   var _bufferBlendMode = BlendMode.dstATop;
+
+  var _initialized = false;
 
   var textPainter = TextPainter(
       textAlign: TextAlign.center,
@@ -270,7 +270,7 @@ class Engine extends StatelessWidget {
     textPainter.paint(canvas, Offset(x, y));
   }
 
-  Engine({
+  LemonEngine({
     required Function(double delta) update,
     required DrawCanvas render,
     WidgetBuilder? buildUI,
@@ -278,7 +278,6 @@ class Engine extends StatelessWidget {
     Function(SharedPreferences sharedPreferences)? init,
     WidgetBuilder? buildLoadingScreen,
     ThemeData? themeData,
-    GestureTapDownCallback? onTapDown,
     GestureLongPressCallback? onLongPress,
     GestureDragStartCallback? onPanStart,
     GestureDragUpdateCallback? onPanUpdate,
@@ -290,7 +289,6 @@ class Engine extends StatelessWidget {
     Function? onRightClicked,
     Function? onRightClickReleased,
     this.dispose,
-    Function(int keyCode)? onKeyPressed,
     Function(int keyCode)? onKeyDown,
     Function(int keyCode)? onKeyUp,
     Function(double x, double y)? onMouseMoved,
@@ -308,7 +306,6 @@ class Engine extends StatelessWidget {
     this.onUpdate = update;
     this.watchBuildUI.value = buildUI;
     this.onDrawCanvas = render;
-    this.onTapDown = onTapDown;
     this.onLongPress = onLongPress;
     this.onScreenSizeChanged = onScreenSizeChanged;
     this.onDispose = onDispose;
@@ -316,7 +313,6 @@ class Engine extends StatelessWidget {
     this.onDrawForeground = onDrawForeground;
     this.onLeftClicked = onLeftClicked;
     this.onKeyPressed = onKeyPressed;
-    this.onKeyDown = onKeyDown;
     this.onKeyUp = onKeyUp;
     this.onPointerScrolled = onMouseScroll;
     this.onMouseMoved = onMouseMoved;
@@ -575,8 +571,7 @@ class Engine extends StatelessWidget {
       internalBuildCreated = true;
     }
     app.value = internalBuild;
-
-
+    _initialized = true;
   }
 
   void _internalOnFullScreenChanged(event){
@@ -584,6 +579,10 @@ class Engine extends StatelessWidget {
   }
 
   void _internalOnUpdate(Timer timer){
+    if (!_initialized){
+      return;
+    }
+
     final now = DateTime.now();
     final updateDuration = now.difference(lastUpdateTime);
     msUpdate.value = updateDuration.inMilliseconds;
@@ -1041,7 +1040,7 @@ class Engine extends StatelessWidget {
     final int keyCode = message['keyCode'];
     if (type == 'keydown') {
       if (keyState[keyCode] == true){
-        onKeyDown?.call(keyCode);
+        onKeyDown(keyCode);
       } else {
         keyState[keyCode] = true;
         onKeyPressed?.call(keyCode);
@@ -1258,6 +1257,11 @@ class Engine extends StatelessWidget {
     return y > Screen_Top - padding && y < Screen_Bottom + padding;
   }
 
+  /// triggered if the state of the key is down
+  void onKeyDown(int keyCode) {
+
+  }
+
   Future<ui.Image> _generateEmptyImage() async {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
@@ -1402,7 +1406,7 @@ class DeviceType {
 
 class _EnginePainter extends CustomPainter {
 
-  final Engine engine;
+  final LemonEngine engine;
 
   const _EnginePainter({required Listenable repaint, required this.engine})
       : super(repaint: repaint);
@@ -1418,7 +1422,7 @@ class _EnginePainter extends CustomPainter {
 
 class _EngineForegroundPainter extends CustomPainter {
 
-  final Engine engine;
+  final LemonEngine engine;
 
   const _EngineForegroundPainter({required Listenable repaint, required this.engine})
       : super(repaint: repaint);
@@ -1447,6 +1451,8 @@ class CustomPainterPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+
+
 
 }
 
