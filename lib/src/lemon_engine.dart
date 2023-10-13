@@ -12,55 +12,65 @@ import 'package:lemon_watch/src.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:universal_html/html.dart' as html;
 
-class LemonEngine extends StatelessWidget {
+abstract class LemonEngine extends StatelessWidget {
+
+  Widget buildUI(BuildContext context);
+  Future onInit(SharedPreferences sharedPreferences);
+  void onUpdate(double delta);
+  void onDispose();
 
   /// override safe
-  void onTapDown(TapDownDetails details) {
+  void onTapDown(TapDownDetails details) { }
+  /// override safe
+  void onTap() {}
+  /// override safe
+  void onLongPress() {}
+  /// override safe
+  void onLongPressDown(LongPressDownDetails details) {}
+  /// override safe
+  void onSecondaryTapDown(TapDownDetails details) {}
+  /// override safe
+  void onScreenSizeChanged(
+      double previousWidth,
+      double previousHeight,
+      double newWidth,
+      double newHeight,
+  ){}
+  /// override safe
+  void onDrawCanvas(Canvas canvas, Size size);
+  /// override safe
+  void onDrawForeground(Canvas canvas, Size size) {}
+  /// override safe
+  void onLeftClicked() {
 
   }
-
   /// override safe
-  GestureTapCallback? onTap;
-  /// override safe
-  GestureLongPressCallback? onLongPress;
-  /// override safe
-  GestureLongPressDownCallback? onLongPressDown;
-  /// override safe
-  GestureTapDownCallback? onSecondaryTapDown;
-  /// override safe
-  CallbackOnScreenSizeChanged? onScreenSizeChanged;
-  /// override safe
-  Function? onDispose;
-  /// override safe
-  DrawCanvas? onDrawCanvas;
-  /// override safe
-  DrawCanvas? onDrawForeground;
-  /// override safe
-  Function? onLeftClicked;
-  /// override safe
-  Function(double x, double y)? onMouseMoved;
+  void onMouseMoved(double x, double y) {}
   /// override safe
   Function(PointerScrollEvent value)? onPointerScrolled;
   /// override safe
   Function(PointerSignalEvent value)? onPointerSignalEvent;
   /// override safe
-  Function? onRightClicked;
+  void onRightClicked(){}
   /// override safe
-  Function? onRightClickReleased;
+  void onRightClickReleased(){}
   /// override safe
-  Function(SharedPreferences sharedPreferences)? onInit;
+  void onMouseEnterCanvas(){}
   /// override safe
-  Function(double delta)? onUpdate;
+  void onMouseExitCanvas(){}
   /// override safe
-  Function? onMouseEnterCanvas;
-  /// override safe
-  Function? onMouseExitCanvas;
   /// triggered the first moment the key is pressed down
-  void Function(int keyCode)? onKeyPressed;
-  /// triggered upon key release
-  void Function(int keyCode)? onKeyUp;
+  void onKeyPressed(int keyCode){}
   /// override safe
-  Function? dispose;
+  /// triggered upon key release
+  void onKeyUp(int keyCode) {}
+  /// override safe
+  void onScaleStart(ScaleStartDetails details){ }
+  /// override safe
+  void onScaleUpdate(ScaleUpdateDetails details){ }
+  /// override safe
+  void onScaleEnd(ScaleEndDetails details){ }
+
   /// override safe
   WidgetBuilder loadingScreenBuilder = (context) => Text("LOADING");
   /// override safe
@@ -70,7 +80,6 @@ class LemonEngine extends StatelessWidget {
   final msRender = Watch(0);
   /// milliseconds elapsed since last update frame
   final msUpdate = Watch(0);
-  List<Offset> touchPoints = [];
   final keyState = <int, bool>{ };
   final renderFramesSkipped = Watch(0);
   final keyStateDuration = <int, int>{ };
@@ -113,7 +122,6 @@ class LemonEngine extends StatelessWidget {
   var lastUpdateTime = DateTime.now();
   var minMSPerRender = 5;
   var mouseOverCanvas = false;
-  var touches = 0;
   var touchDownId = 0;
   var touchHeldId = 0;
   var scrollSensitivity = 0.0005;
@@ -139,7 +147,6 @@ class LemonEngine extends StatelessWidget {
   final _renderCirclePositions = Float32List(_renderCircleSegments * 6);
 
   final watchBackgroundColor = Watch(Default_Background_Color);
-  final watchBuildUI = Watch<WidgetBuilder?>(null);
   final watchTitle = Watch(Default_Title);
   final durationPerUpdate = Watch(Duration.zero);
   final watchMouseLeftDown = Watch(false);
@@ -171,8 +178,6 @@ class LemonEngine extends StatelessWidget {
     bufferBlendMode = BlendMode.dstATop;
   }
 
-  set buildUI(WidgetBuilder? value) => watchBuildUI.value = value;
-
   set title(String value) => watchTitle.value = value;
 
   set backgroundColor(Color value) => watchBackgroundColor.value = value;
@@ -196,8 +201,6 @@ class LemonEngine extends StatelessWidget {
   double get screenDiagonalLength => hyp(screen.width, screen.height);
 
   double get screenArea => screen.width * screen.height;
-
-  WidgetBuilder? get buildUI => watchBuildUI.value;
 
   String get title => watchTitle.value;
 
@@ -225,7 +228,7 @@ class LemonEngine extends StatelessWidget {
 
   void _internalOnChangedMouseLeftDown(bool value){
     if (value) {
-      onLeftClicked?.call();
+      onLeftClicked();
     } else {
       mouseLeftDownFrames = 0;
     }
@@ -242,7 +245,7 @@ class LemonEngine extends StatelessWidget {
     final previousScreenHeight = screen.height;
     screen.width = width;
     screen.height = height;
-    onScreenSizeChanged!.call(
+    onScreenSizeChanged(
       previousScreenWidth,
       previousScreenHeight,
       screen.width,
@@ -271,65 +274,23 @@ class LemonEngine extends StatelessWidget {
   }
 
   LemonEngine({
-    required Function(double delta) update,
-    required DrawCanvas render,
-    WidgetBuilder? buildUI,
     String title = Default_Title,
-    Function(SharedPreferences sharedPreferences)? init,
     WidgetBuilder? buildLoadingScreen,
     ThemeData? themeData,
-    GestureLongPressCallback? onLongPress,
-    GestureDragStartCallback? onPanStart,
-    GestureDragUpdateCallback? onPanUpdate,
-    GestureDragEndCallback? onPanEnd,
-    CallbackOnScreenSizeChanged? onScreenSizeChanged,
-    Function? onDispose,
-    DrawCanvas? onDrawForeground,
-    Function? onLeftClicked,
-    Function? onRightClicked,
-    Function? onRightClickReleased,
-    this.dispose,
-    Function(int keyCode)? onKeyDown,
-    Function(int keyCode)? onKeyUp,
-    Function(double x, double y)? onMouseMoved,
-    Function(PointerScrollEvent value)? onMouseScroll,
-    Function(SharedPreferences sharedPreferences)? onInit,
-    Function(Object error, StackTrace stack)? onError,
-    bool setPathUrlStrategy = true,
     Color backgroundColor = Default_Background_Color,
-    Duration? durationPerUpdate = Default_Duration_Per_Update,
+    Duration durationPerUpdate = Default_Duration_Per_Update,
   }){
     this.watchMouseLeftDown.onChanged(_internalOnChangedMouseLeftDown);
     this.durationPerUpdate.onChanged(onChangedDurationPerUpdate);
     this.watchTitle.value = title;
-    this.onInit = init;
-    this.onUpdate = update;
-    this.watchBuildUI.value = buildUI;
-    this.onDrawCanvas = render;
-    this.onLongPress = onLongPress;
-    this.onScreenSizeChanged = onScreenSizeChanged;
-    this.onDispose = onDispose;
-    this.onDrawCanvas = render;
-    this.onDrawForeground = onDrawForeground;
-    this.onLeftClicked = onLeftClicked;
-    this.onKeyPressed = onKeyPressed;
-    this.onKeyUp = onKeyUp;
-    this.onPointerScrolled = onMouseScroll;
-    this.onMouseMoved = onMouseMoved;
-    this.onRightClicked = onRightClicked;
-    this.onRightClickReleased = onRightClickReleased;
     this.themeData.value = themeData;
     this.backgroundColor = backgroundColor;
     this.onError = onError;
+    this.durationPerUpdate.value = durationPerUpdate;
 
     if (buildLoadingScreen != null){
       this.loadingScreenBuilder = buildLoadingScreen;
     }
-
-    // if (setPathUrlStrategy){
-    //   us.setPathUrlStrategy();
-    // }
-    // WidgetsFlutterBinding.ensureInitialized();
   }
 
   void _internalOnPointerScrollEvent(PointerScrollEvent event) {
@@ -425,7 +386,7 @@ class LemonEngine extends StatelessWidget {
     previousMousePositionY = mousePositionY;
     mousePositionX = event.position.dx;
     mousePositionY = event.position.dy;
-    onMouseMoved?.call(mousePositionX, mousePositionY);
+    onMouseMoved(mousePositionX, mousePositionY);
   }
 
   void _internalOnPointerHover(PointerHoverEvent event) {
@@ -434,7 +395,7 @@ class LemonEngine extends StatelessWidget {
     mousePositionX = event.position.dx;
     mousePositionY = event.position.dy;
     touchHeldId = event.pointer;
-    onMouseMoved?.call(mousePositionX, mousePositionY);
+    onMouseMoved(mousePositionX, mousePositionY);
   }
 
   /// event.buttons is always 0 and does not seem to correspond to the left or right mouse
@@ -467,47 +428,10 @@ class LemonEngine extends StatelessWidget {
     }
   }
 
-  void _internalOnTapDown(TapDownDetails details){
-     onTapDown?.call(details);
-  }
-
-  void _internalOnScaleStart(ScaleStartDetails details){
-    touches = details.pointerCount;
-    touchPoints = [];
-  }
-
-  void _internalOnScaleUpdate(ScaleUpdateDetails details) {
-    // final _points = details.focalPoint - details.focalPointDelta;
-    touchPoints = List.from(touchPoints)..add(details.focalPoint - details.focalPointDelta);
-    touches = details.pointerCount;
-  }
-
-  void _internalOnScaleEnd(ScaleEndDetails details){
-    touches = details.pointerCount;
-    touchPoints = [];
-  }
-
-  void _internalOnTap(){
-    onTap?.call();
-  }
-
-  void _internalOnLongPress(){
-    onLongPress?.call();
-  }
-
-  void _internalOnLongPressDown(LongPressDownDetails details){
-    onLongPressDown?.call(details);
-  }
-
-  void _internalOnSecondaryTapDown(TapDownDetails details){
-    onSecondaryTapDown?.call(details);
-  }
-
   void _internalPaint(Canvas canvas, Size size) {
     this.canvas = canvas;
     canvas.scale(zoom, zoom);
     canvas.translate(-cameraX, -cameraY);
-    if (onDrawCanvas == null) return;
     batchesRendered = 0;
     batches1Rendered = 0;
     batches2Rendered = 0;
@@ -517,7 +441,7 @@ class LemonEngine extends StatelessWidget {
     batches32Rendered = 0;
     batches64Rendered = 0;
     batches128Rendered = 0;
-    onDrawCanvas!.call(canvas, size);
+    onDrawCanvas(canvas, size);
     flushBuffer();
     assert(bufferIndex == 0);
   }
@@ -552,7 +476,7 @@ class LemonEngine extends StatelessWidget {
 
     mouseRightDown.onChanged((bool value) {
       if (value) {
-        onRightClicked?.call();
+        onRightClicked();
       }
     });
 
@@ -561,16 +485,15 @@ class LemonEngine extends StatelessWidget {
     disableRightClickContextMenu();
     paint.isAntiAlias = false;
     this.sharedPreferences = await SharedPreferences.getInstance();
-    if (onInit != null) {
-      await onInit!(sharedPreferences);
-    }
-    durationPerUpdate.value = Default_Duration_Per_Update;
+    await onInit(sharedPreferences);
 
     if (!internalBuildCreated){
       internalBuild = _internalBuildApp();
       internalBuildCreated = true;
     }
+
     app.value = internalBuild;
+    durationPerUpdate.value = Default_Duration_Per_Update;
     _initialized = true;
   }
 
@@ -602,7 +525,7 @@ class LemonEngine extends StatelessWidget {
         : DeviceType.Computer;
 
     final durationPerUpdateMS = durationPerUpdate.value.inMilliseconds;
-    onUpdate?.call(updateDuration.inMilliseconds / (durationPerUpdateMS > 0 ? durationPerUpdateMS : 1));
+    onUpdate(updateDuration.inMilliseconds / (durationPerUpdateMS > 0 ? durationPerUpdateMS : 1));
     final sX = screenCenterWorldX;
     final sY = screenCenterWorldY;
     final zoomDiff = targetZoom - zoom;
@@ -1043,12 +966,12 @@ class LemonEngine extends StatelessWidget {
         onKeyDown(keyCode);
       } else {
         keyState[keyCode] = true;
-        onKeyPressed?.call(keyCode);
+        onKeyPressed(keyCode);
       }
     } else
     if (type == 'keyup') {
       keyState[keyCode] = false;
-      onKeyUp?.call(keyCode);
+      onKeyUp(keyCode);
     }
     return const {'handled': true};
   }
@@ -1071,9 +994,7 @@ class LemonEngine extends StatelessWidget {
                     return Stack(
                       children: [
                         _internalBuildCanvas(context),
-                        WatchBuilder(watchBuildUI, (WidgetBuilder? buildUI)
-                        => buildUI != null ? buildUI(context) : const SizedBox()
-                        ),
+                        buildUI(context),
                       ],
                     );
                   },
@@ -1090,8 +1011,9 @@ class LemonEngine extends StatelessWidget {
   void _internalDispose(){
     print("engine.dispose()");
     updateTimer?.cancel();
-    dispose?.call();
+    onDispose();
   }
+
 
   Widget _internalBuildCanvas(BuildContext context) {
     final child = Listener(
@@ -1101,24 +1023,24 @@ class LemonEngine extends StatelessWidget {
       onPointerHover: _internalOnPointerHover,
       onPointerSignal: _internalOnPointerSignal,
       child: GestureDetector(
-          onScaleStart: _internalOnScaleStart,
-          onScaleUpdate: _internalOnScaleUpdate,
-          onScaleEnd: _internalOnScaleEnd,
-          onTapDown: _internalOnTapDown,
-          onTap: _internalOnTap,
-          onLongPress: _internalOnLongPress,
-          onLongPressDown: _internalOnLongPressDown,
-          onSecondaryTapDown: _internalOnSecondaryTapDown,
+          onScaleStart: onScaleStart,
+          onScaleUpdate: onScaleUpdate,
+          onScaleEnd: onScaleEnd,
+          onTapDown: onTapDown,
+          onTap: onTap,
+          onLongPress: onLongPress,
+          onLongPressDown: onLongPressDown,
+          onSecondaryTapDown: onSecondaryTapDown,
           child: WatchBuilder(watchBackgroundColor, (Color backgroundColor) =>
             MouseRegion(
               hitTestBehavior: HitTestBehavior.deferToChild,
               onEnter: (_) {
                 mouseOverCanvas = true;
-                onMouseEnterCanvas?.call();
+                onMouseEnterCanvas();
               },
               onExit: (_) {
                 mouseOverCanvas = false;
-                onMouseExitCanvas?.call();
+                onMouseExitCanvas();
               },
               child: Container(
                   color: backgroundColor,
@@ -1429,7 +1351,7 @@ class _EngineForegroundPainter extends CustomPainter {
 
   @override
   void paint(Canvas _canvas, Size _size) {
-    engine.onDrawForeground?.call(_canvas, _size);
+    engine.onDrawForeground(_canvas, _size);
   }
 
   @override
