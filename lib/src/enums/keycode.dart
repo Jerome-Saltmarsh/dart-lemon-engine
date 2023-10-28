@@ -18,12 +18,12 @@ class KeyCode {
   static const Digit_1 = 49;
   static const Digit_2 = 50;
   static const Digit_3 = 51;
-  static const Digit_4 = 51;
-  static const Digit_5 = 52;
-  static const Digit_6 = 53;
-  static const Digit_7 = 54;
-  static const Digit_8 = 55;
-  static const Digit_9 = 56;
+  static const Digit_4 = 52;
+  static const Digit_5 = 53;
+  static const Digit_6 = 54;
+  static const Digit_7 = 55;
+  static const Digit_8 = 56;
+  static const Digit_9 = 57;
 
   static const A = 65;
   static const B = 66;

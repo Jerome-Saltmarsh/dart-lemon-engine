@@ -611,7 +611,10 @@ abstract class LemonEngine extends StatelessWidget {
       assert (remaining > 0);
 
       if (remaining == 1) {
-        final f = flushIndex << 2;
+        final _bufferClr1 = this._bufferClr1;
+        final _bufferDst1 = this._bufferDst1;
+        final _bufferSrc1 = this._bufferSrc1;
+        final f = flushIndex * 4;
         _bufferClr1[0] = bufferClr[flushIndex];
         _bufferDst1.setRange(0, 4, bufferDst, f);
         _bufferSrc1.setRange(0, 4, bufferSrc, f);
@@ -630,15 +633,14 @@ abstract class LemonEngine extends StatelessWidget {
       }
 
       if (remaining < 4) {
-        for (var i = 0; i < 2; i++) {
-          final start = i << 2;
-          final end = start + 4;
-          final f = flushIndex << 2;
-          _bufferClr2[i] = bufferClr[flushIndex];
-          _bufferDst2.setRange(start, end, bufferDst, f);
-          _bufferSrc2.setRange(start, end, bufferSrc, f);
-          flushIndex++;
-        }
+        final f = flushIndex * 4;
+        final _bufferClr2 = this._bufferClr2;
+        final _bufferDst2 = this._bufferDst2;
+        final _bufferSrc2 = this._bufferSrc2;
+        _bufferClr2.setRange(0, 2, bufferClr, flushIndex);
+        _bufferDst2.setRange(0, 7, bufferDst, f);
+        _bufferSrc2.setRange(0, 7, bufferSrc, f);
+        flushIndex += 2;
         canvas.drawRawAtlas(
           image,
           _bufferDst2,
@@ -656,15 +658,11 @@ abstract class LemonEngine extends StatelessWidget {
         final clr = _bufferClr4;
         final dst = _bufferDst4;
         final src = _bufferSrc4;
-        for (var i = 0; i < 4; i++) {
-          final start = i << 2;
-          final end = start + 4;
-          final f = flushIndex << 2;
-          clr[i] = bufferClr[flushIndex];
-          dst.setRange(start, end, bufferDst, f);
-          src.setRange(start, end, bufferSrc, f);
-          flushIndex++;
-        }
+        final f = flushIndex * 4;
+        clr.setRange(0, 4, bufferClr, flushIndex);
+        dst.setRange(0, 16, bufferDst, f);
+        src.setRange(0, 16, bufferSrc, f);
+        flushIndex += 4;
         canvas.drawRawAtlas(
           image,
           dst,
@@ -779,6 +777,32 @@ abstract class LemonEngine extends StatelessWidget {
           paint,
         );
         batches64Rendered++;
+        continue;
+      }
+
+      if (remaining < 256) {
+        final dst128 = _bufferDst128;
+        final src128 = _bufferSrc128;
+        final clr128 = _bufferClr128;
+        for (var i = 0; i < 128; i++) {
+          final start = i << 2;
+          final end = start + 4;
+          final f = flushIndex << 2;
+          clr128[i] = bufferClr[flushIndex];
+          dst128.setRange(start, end, bufferDst, f);
+          src128.setRange(start, end, bufferSrc, f);
+          flushIndex++;
+        }
+        canvas.drawRawAtlas(
+          image,
+          dst128,
+          src128,
+          clr128,
+          blendMode,
+          null,
+          paint,
+        );
+        batches128Rendered++;
         continue;
       }
 
@@ -1168,7 +1192,6 @@ abstract class LemonEngine extends StatelessWidget {
       paint,
     );
     bufferIndex = 0;
-    batches128Rendered++;
   }
 
   bool isOnscreen(double x, double y, {required double padding}) {

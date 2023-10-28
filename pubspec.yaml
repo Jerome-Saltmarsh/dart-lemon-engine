@@ -1,6 +1,6 @@
 name: lemon_engine
 description: build canvas games for the web
-version: 0.5.9
+version: 0.6.0
 homepage: https://github.com/Jerome-Saltmarsh/dart-lemon-engine
 
 environment:
