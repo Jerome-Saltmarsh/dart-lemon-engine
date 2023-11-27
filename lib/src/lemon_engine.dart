@@ -11,6 +11,8 @@ import 'package:lemon_engine/src/math.dart';
 import 'package:lemon_watch/src.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:universal_html/html.dart' as html;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:window_manager/window_manager.dart';
 
 abstract class LemonEngine extends StatelessWidget {
 
@@ -97,12 +99,32 @@ abstract class LemonEngine extends StatelessWidget {
 
   final keyboardState = <LogicalKeyboardKey, int>{};
   final themeData = Watch<ThemeData?>(null);
-  final fullScreen = Watch(false);
   final deviceType = Watch(DeviceType.Computer);
   final cursorType = Watch(CursorType.Precise);
   final notifierPaintFrame = ValueNotifier<int>(0);
   final notifierPaintForeground = ValueNotifier<int>(0);
   final screen = Screen();
+
+  late final fullScreen = Watch(false, onChanged: (bool fullScreen){
+    if (fullScreen){
+      if (kIsWeb){
+        html.document.documentElement?.requestFullscreen();
+      } else {
+        windowManager.ensureInitialized().then((value) {
+          windowManager.setFullScreen(true);
+        });
+      }
+    } else {
+      if (kIsWeb){
+        html.document.exitFullscreen();
+      } else {
+        windowManager.ensureInitialized().then((value) {
+          windowManager.setFullScreen(false);
+        });
+      }
+    }
+
+  });
 
   late BuildContext buildContext;
   late Canvas canvas;
@@ -346,12 +368,17 @@ abstract class LemonEngine extends StatelessWidget {
     window.location.href = domain;
   }
 
-  void fullscreenToggle()  =>
-    fullScreenActive ? fullScreenExit() : fullScreenEnter();
+  void fullscreenToggle()  {
+    fullScreen.value = !fullScreen.value;
+  }
 
-  void fullScreenExit() => html.document.exitFullscreen();
+  void fullScreenExit() {
+    fullScreen.value = false;
+  }
 
-  void fullScreenEnter() => html.document.documentElement?.requestFullscreen();
+  void fullScreenEnter() {
+    fullScreen.value = true;
+  }
 
   void panCamera() {
     final positionX = screenToWorldX(mousePositionX);
@@ -907,7 +934,39 @@ abstract class LemonEngine extends StatelessWidget {
     dst[i + 3] = dstY;
 
     bufferIndex++;
-    if (bufferIndex == 128) {
+    if (index + 1 >= 128) {
+      flushAll();
+    }
+  }
+
+  void renderFast({
+    required int color,
+    required double srcLeft,
+    required double srcTop,
+    required double srcRight,
+    required double srcBottom,
+    required double scale,
+    required double rotation,
+    required double dstX,
+    required double dstY,
+    required Int32List clr,
+    required Float32List src,
+    required Float32List dst,
+  }){
+    final index = bufferIndex;
+    final i = index << 2;
+    clr[index] = color;
+    src[i] = srcLeft;
+    src[i + 1] = srcTop;
+    src[i + 2] = srcRight;
+    src[i + 3] = srcBottom;
+    dst[i] = scale;
+    dst[i + 1] = rotation;
+    dst[i + 2] = dstX;
+    dst[i + 3] = dstY;
+
+    bufferIndex++;
+    if (index + 1 >= 128) {
       flushAll();
     }
   }
@@ -1106,7 +1165,9 @@ abstract class LemonEngine extends StatelessWidget {
   void drawLine(double x1, double y1, double x2, double y2) =>
     canvas.drawLine(Offset(x1, y1), Offset(x2, y2), paint);
 
-  bool get fullScreenActive => html.document.fullscreenElement != null;
+  bool get fullScreenActive {
+    return html.document.fullscreenElement != null;
+  }
 
   double screenToWorldX(double value)  =>
     cameraX + value / zoom;
