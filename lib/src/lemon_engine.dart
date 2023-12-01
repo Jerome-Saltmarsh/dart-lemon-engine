@@ -16,10 +16,14 @@ import 'package:window_manager/window_manager.dart';
 
 abstract class LemonEngine extends StatelessWidget {
 
+  var keyboardEventsEnabled = true;
+
   Widget buildUI(BuildContext context);
   Future onInit(SharedPreferences sharedPreferences);
   void onUpdate(double delta);
   void onDispose();
+
+  final window = windowManager;
 
   /// override safe
   void onTapDown(TapDownDetails details) { }
@@ -62,10 +66,13 @@ abstract class LemonEngine extends StatelessWidget {
   void onMouseExitCanvas(){}
   /// override safe
   /// triggered the first moment the key is pressed down
-  void onKeyPressed(int keyCode){}
+  void onKeyPressed(PhysicalKeyboardKey keyCode){}
   /// override safe
-  /// triggered upon key release
-  void onKeyUp(int keyCode) {}
+  void onRawKeyboardEvent(RawKeyEvent event){ }
+  /// override safe
+  void onKeyUp(PhysicalKeyboardKey keyCode) {}
+  /// override safe
+  void onKeyDown(PhysicalKeyboardKey keyCode) {}
   /// override safe
   void onScaleStart(ScaleStartDetails details){ }
   /// override safe
@@ -82,9 +89,8 @@ abstract class LemonEngine extends StatelessWidget {
   final msRender = Watch(0);
   /// milliseconds elapsed since last update frame
   final msUpdate = Watch(0);
-  final keyState = <int, bool>{ };
+  final keyState = <PhysicalKeyboardKey, bool>{ };
   final renderFramesSkipped = Watch(0);
-  final keyStateDuration = <int, int>{ };
   final Map<String, TextSpan> textSpans = {
   };
 
@@ -180,6 +186,8 @@ abstract class LemonEngine extends StatelessWidget {
   static const Default_Duration_Per_Update = Duration(milliseconds: 40);
   static const Default_Title = "DEMO";
 
+  bool get isWeb => kIsWeb;
+
   set bufferImage(ui.Image image){
     if (_bufferImage == image) return;
     flushBuffer();
@@ -237,16 +245,13 @@ abstract class LemonEngine extends StatelessWidget {
   int get paintFrame => notifierPaintFrame.value;
 
   bool get keyPressedShiftLeft =>
-      keyPressed(KeyCode.Shift_Left);
+      keyPressed(PhysicalKeyboardKey.shiftLeft);
 
   bool get keyPressedSpace =>
-      keyPressed(KeyCode.Space);
+      keyPressed(PhysicalKeyboardKey.space);
 
-  bool keyPressed(int key) =>
+  bool keyPressed(PhysicalKeyboardKey key) =>
       keyState[key] ?? false;
-
-  int getKeyDownDuration(int key) =>
-    keyStateDuration[key] ?? 0;
 
   void _internalOnChangedMouseLeftDown(bool value){
     if (value) {
@@ -481,22 +486,24 @@ abstract class LemonEngine extends StatelessWidget {
 
   var _initCallAmount = 0;
 
-  void enableKeyEventHandler(){
-    SystemChannels.keyEvent.setMessageHandler(_handleRawKeyMessage);
+  void enableKeyEventHandler() {
+    print('lemon_engine.enableKeyEventHandler()');
+    keyboardEventsEnabled = true;
   }
 
-  void disableKeyEventHandler(){
-    SystemChannels.keyEvent.setMessageHandler(null);
+  void disableKeyEventHandler() {
+    print('lemon_engine.disableKeyEventHandler()');
+    keyboardEventsEnabled = false;
   }
 
   Future _internalInit() async {
     _initCallAmount++;
     print("engine.internalInit()");
-    if (_initCallAmount > 1){
+    if (_initCallAmount > 1) {
       print('engine - warning init called ${_initCallAmount}');
       return;
     }
-    enableKeyEventHandler();
+    _registerRawKeyboardEventHandler();
     _bufferImage = await _generateEmptyImage();
     paint.filterQuality = FilterQuality.none;
     paint.isAntiAlias = false;
@@ -522,6 +529,31 @@ abstract class LemonEngine extends StatelessWidget {
     app.value = internalBuild;
     durationPerUpdate.value = Default_Duration_Per_Update;
     _initialized = true;
+  }
+
+  void _registerRawKeyboardEventHandler() =>
+      RawKeyboard.instance.addListener(_onRawKeyboardEvent);
+
+  void _onRawKeyboardEvent(RawKeyEvent event) {
+    if (!keyboardEventsEnabled){
+      return;
+    }
+
+    onRawKeyboardEvent(event);
+    final key = event.physicalKey;
+    if (event is RawKeyDownEvent) {
+      if (keyState[key] != true){
+        keyState[key] = true;
+        onKeyPressed(key);
+      }
+      onKeyDown(key);
+      return;
+    }
+    if (event is RawKeyUpEvent) {
+      keyState[key] = false;
+      onKeyUp(key);
+      return;
+    }
   }
 
   void _internalOnFullScreenChanged(event){
@@ -1034,24 +1066,24 @@ abstract class LemonEngine extends StatelessWidget {
     }
   }
 
-  Future<Map<String, dynamic>> _handleRawKeyMessage(dynamic message) async {
-    // print('handleRawKeyMessage($message)');
-    final type = message['type'];
-    final int keyCode = message['keyCode'];
-    if (type == 'keydown') {
-      if (keyState[keyCode] == true){
-        onKeyDown(keyCode);
-      } else {
-        keyState[keyCode] = true;
-        onKeyPressed(keyCode);
-      }
-    } else
-    if (type == 'keyup') {
-      keyState[keyCode] = false;
-      onKeyUp(keyCode);
-    }
-    return const {'handled': true};
-  }
+  // Future<Map<String, dynamic>> _handleRawKeyMessage(dynamic message) async {
+  //   print('handleRawKeyMessage($message)');
+  //   final type = message['type'];
+  //   final int keyCode = message['keyCode'];
+  //   if (type == 'keydown') {
+  //     if (keyState[keyCode] == true){
+  //       onKeyDown(keyCode);
+  //     } else {
+  //       keyState[keyCode] = true;
+  //       onKeyPressed(keyCode);
+  //     }
+  //   } else
+  //   if (type == 'keyup') {
+  //     keyState[keyCode] = false;
+  //     onKeyUp(keyCode);
+  //   }
+  //   return const {'handled': true};
+  // }
 
   Widget _internalBuildApp() => WatchBuilder(themeData, (ThemeData? themeData) =>
       CustomTicker(
@@ -1255,11 +1287,6 @@ abstract class LemonEngine extends StatelessWidget {
       return false;
 
     return y > Screen_Top - padding && y < Screen_Bottom + padding;
-  }
-
-  /// triggered if the state of the key is down
-  void onKeyDown(int keyCode) {
-
   }
 
   Future<ui.Image> _generateEmptyImage() async {
