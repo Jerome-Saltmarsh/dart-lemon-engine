@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +12,6 @@ import 'package:lemon_engine/src/math.dart';
 import 'package:lemon_watch/src.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:universal_html/html.dart' as html;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:window_manager/window_manager.dart';
 
 abstract class LemonEngine extends StatelessWidget {
@@ -163,6 +163,8 @@ abstract class LemonEngine extends StatelessWidget {
   var previousMousePositionY = 0.0;
   var mouseLeftDownFrames = 0;
   var zoom = 1.0;
+  var zoomMin = 0.2;
+  var zoomMax = 6.0;
   var drawCanvasAfterUpdate = true;
   var cameraX = 0.0;
   var cameraY = 0.0;
@@ -219,6 +221,13 @@ abstract class LemonEngine extends StatelessWidget {
     paint.color = value;
     flushBuffer();
   }
+
+  double get zoom01 {
+    return _getCurrentInterpolation(zoomMin, zoomMax, zoom);
+  }
+
+  static double _getCurrentInterpolation(num start, num end, num value) =>
+      (value - start) / (end - start);
 
   Color get color => paint.color;
 
@@ -323,7 +332,7 @@ abstract class LemonEngine extends StatelessWidget {
   void _internalOnPointerScrollEvent(PointerScrollEvent event) {
     if (zoomOnScroll) {
       targetZoom -=  event.scrollDelta.dy * scrollSensitivity;
-      targetZoom = targetZoom.clamp(0.2, 6);
+      targetZoom = targetZoom.clamp(zoomMin, zoomMax);
     }
     onPointerScrolled?.call(event);
   }
@@ -1066,32 +1075,13 @@ abstract class LemonEngine extends StatelessWidget {
     }
   }
 
-  // Future<Map<String, dynamic>> _handleRawKeyMessage(dynamic message) async {
-  //   print('handleRawKeyMessage($message)');
-  //   final type = message['type'];
-  //   final int keyCode = message['keyCode'];
-  //   if (type == 'keydown') {
-  //     if (keyState[keyCode] == true){
-  //       onKeyDown(keyCode);
-  //     } else {
-  //       keyState[keyCode] = true;
-  //       onKeyPressed(keyCode);
-  //     }
-  //   } else
-  //   if (type == 'keyup') {
-  //     keyState[keyCode] = false;
-  //     onKeyUp(keyCode);
-  //   }
-  //   return const {'handled': true};
-  // }
-
   Widget _internalBuildApp() => WatchBuilder(themeData, (ThemeData? themeData) =>
       CustomTicker(
         onTrick: _onTickElapsed,
         onDispose: _internalDispose,
         child: Builder(
           builder: (context) {
-            print('MaterialApp()');
+            print('lemon_engine.MaterialApp()');
             return MaterialApp(
               title: title,
               theme: themeData,
