@@ -512,7 +512,6 @@ abstract class LemonEngine extends StatelessWidget {
       print('engine - warning init called ${_initCallAmount}');
       return;
     }
-    _registerRawKeyboardEventHandler();
     _bufferImage = await _generateEmptyImage();
     paint.filterQuality = FilterQuality.none;
     paint.isAntiAlias = false;
@@ -537,6 +536,7 @@ abstract class LemonEngine extends StatelessWidget {
 
     app.value = internalBuild;
     durationPerUpdate.value = Default_Duration_Per_Update;
+    _registerRawKeyboardEventHandler();
     _initialized = true;
   }
 
