@@ -12,19 +12,16 @@ import 'package:lemon_engine/src/math.dart';
 import 'package:lemon_watch/src.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:universal_html/html.dart' as html;
-import 'package:window_manager/window_manager.dart';
 
 abstract class LemonEngine extends StatelessWidget {
 
-  var keyboardEventsEnabled = true;
-
   Widget buildUI(BuildContext context);
+
   Future onInit(SharedPreferences sharedPreferences);
+
   void onUpdate(double delta);
+
   void onDispose();
-
-  final window = windowManager;
-
   /// override safe
   void onTapDown(TapDownDetails details) { }
   /// override safe
@@ -67,8 +64,8 @@ abstract class LemonEngine extends StatelessWidget {
   /// override safe
   /// triggered the first moment the key is pressed down
   void onKeyPressed(PhysicalKeyboardKey keyCode){}
-  /// override safe
-  void onRawKeyboardEvent(RawKeyEvent event){ }
+  // /// override safe
+  // void onRawKeyboardEvent(RawKeyEvent event){ }
   /// override safe
   void onKeyUp(PhysicalKeyboardKey keyCode) {}
   /// override safe
@@ -81,7 +78,7 @@ abstract class LemonEngine extends StatelessWidget {
   void onScaleEnd(ScaleEndDetails details){ }
 
   /// override safe
-  WidgetBuilder loadingScreenBuilder = (context) => Text("LOADING");
+  Widget buildLoadingPage(BuildContext context) => Text("LOADING");
   /// override safe
   Function(Object error, StackTrace stack)? onError;
 
@@ -106,46 +103,25 @@ abstract class LemonEngine extends StatelessWidget {
   final keyboardState = <LogicalKeyboardKey, int>{};
   final themeData = Watch<ThemeData?>(null);
   final deviceType = Watch(DeviceType.Computer);
-  final cursorType = Watch(CursorType.Precise);
+  final cursorType = Watch(SystemMouseCursors.basic);
   final notifierPaintFrame = ValueNotifier<int>(0);
   final notifierPaintForeground = ValueNotifier<int>(0);
   final screen = Screen();
-
-  late final fullScreen = Watch(false, onChanged: (bool fullScreen){
-    if (fullScreen){
-      if (kIsWeb){
-        html.document.documentElement?.requestFullscreen();
-      } else {
-        windowManager.ensureInitialized().then((value) {
-          windowManager.setFullScreen(true);
-        });
-      }
-    } else {
-      if (kIsWeb){
-        html.document.exitFullscreen();
-      } else {
-        windowManager.ensureInitialized().then((value) {
-          windowManager.setFullScreen(false);
-        });
-      }
-    }
-
-  });
 
   late BuildContext buildContext;
   late Canvas canvas;
   late ui.Image _bufferImage;
 
-  late final sharedPreferences;
+  late final SharedPreferences sharedPreferences;
 
   var _bufferBlendMode = BlendMode.dstATop;
-
   var _initialized = false;
 
   var textPainter = TextPainter(
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr
   );
+  var keyboardEventsEnabled = true;
   var lastRenderTime = DateTime.now();
   var lastUpdateTime = DateTime.now();
   var minMSPerRender = 5;
@@ -311,7 +287,6 @@ abstract class LemonEngine extends StatelessWidget {
 
   LemonEngine({
     String title = Default_Title,
-    WidgetBuilder? buildLoadingScreen,
     ThemeData? themeData,
     Color backgroundColor = Default_Background_Color,
     Duration durationPerUpdate = Default_Duration_Per_Update,
@@ -323,10 +298,6 @@ abstract class LemonEngine extends StatelessWidget {
     this.backgroundColor = backgroundColor;
     this.onError = onError;
     this.durationPerUpdate.value = durationPerUpdate;
-
-    if (buildLoadingScreen != null){
-      this.loadingScreenBuilder = buildLoadingScreen;
-    }
   }
 
   void _internalOnPointerScrollEvent(PointerScrollEvent event) {
@@ -382,17 +353,17 @@ abstract class LemonEngine extends StatelessWidget {
     window.location.href = domain;
   }
 
-  void fullscreenToggle()  {
-    fullScreen.value = !fullScreen.value;
-  }
-
-  void fullScreenExit() {
-    fullScreen.value = false;
-  }
-
-  void fullScreenEnter() {
-    fullScreen.value = true;
-  }
+  // void fullscreenToggle()  {
+  //   fullScreen.value = !fullScreen.value;
+  // }
+  //
+  // void fullScreenExit() {
+  //   fullScreen.value = false;
+  // }
+  //
+  // void fullScreenEnter() {
+  //   fullScreen.value = true;
+  // }
 
   void panCamera() {
     final positionX = screenToWorldX(mousePositionX);
@@ -522,8 +493,6 @@ abstract class LemonEngine extends StatelessWidget {
       }
     });
 
-    html.document.addEventListener('fullscreenchange', _internalOnFullScreenChanged);
-
     disableRightClickContextMenu();
     paint.isAntiAlias = false;
     this.sharedPreferences = await SharedPreferences.getInstance();
@@ -536,38 +505,43 @@ abstract class LemonEngine extends StatelessWidget {
 
     app.value = internalBuild;
     durationPerUpdate.value = Default_Duration_Per_Update;
-    _registerRawKeyboardEventHandler();
+    _registerKeyboard();
     _initialized = true;
   }
 
-  void _registerRawKeyboardEventHandler() =>
-      RawKeyboard.instance.addListener(_onRawKeyboardEvent);
+  void _registerKeyboard() {
+    HardwareKeyboard.instance.addHandler(_handleKeyEvent);
+  }
 
-  void _onRawKeyboardEvent(RawKeyEvent event) {
+
+  bool _handleKeyEvent(KeyEvent event) {
     if (!keyboardEventsEnabled){
-      return;
+      return false;
     }
 
-    onRawKeyboardEvent(event);
     final key = event.physicalKey;
-    if (event is RawKeyDownEvent) {
+    if (event is KeyDownEvent) {
       if (keyState[key] != true){
         keyState[key] = true;
         onKeyPressed(key);
       }
       onKeyDown(key);
-      return;
     }
-    if (event is RawKeyUpEvent) {
+    if (event is KeyUpEvent) {
       keyState[key] = false;
       onKeyUp(key);
-      return;
     }
+    onKeyEvent(event);
+    return true;
   }
 
-  void _internalOnFullScreenChanged(event){
-    fullScreen.value = fullScreenActive;
+  void onKeyEvent(KeyEvent event){
+
   }
+
+  // void _internalOnFullScreenChanged(event){
+  //   fullScreen.value = fullScreenActive;
+  // }
 
   void _internalOnUpdate(Timer timer){
     if (!_initialized){
@@ -1161,28 +1135,28 @@ abstract class LemonEngine extends StatelessWidget {
             ))),
     );
 
-    return WatchBuilder(this.cursorType, (CursorType cursorType) =>
+    return WatchBuilder(this.cursorType, (cursorType) =>
         MouseRegion(
-          cursor: _internalMapCursorTypeToSystemMouseCursor(cursorType),
+          cursor: cursorType,
           child: child,
         )
     );
   }
 
-  SystemMouseCursor _internalMapCursorTypeToSystemMouseCursor(CursorType value){
-    switch (value) {
-      case CursorType.Forbidden:
-        return SystemMouseCursors.forbidden;
-      case CursorType.Precise:
-        return SystemMouseCursors.precise;
-      case CursorType.None:
-        return SystemMouseCursors.none;
-      case CursorType.Click:
-        return SystemMouseCursors.click;
-      default:
-        return SystemMouseCursors.basic;
-    }
-  }
+  // SystemMouseCursor _internalMapCursorTypeToSystemMouseCursor(CursorType value){
+  //   switch (value) {
+  //     case CursorType.Forbidden:
+  //       return SystemMouseCursors.forbidden;
+  //     case CursorType.Precise:
+  //       return SystemMouseCursors.precise;
+  //     case CursorType.None:
+  //       return SystemMouseCursors.none;
+  //     case CursorType.Click:
+  //       return SystemMouseCursors.click;
+  //     default:
+  //       return SystemMouseCursors.basic;
+  //   }
+  // }
 
   void drawLine(double x1, double y1, double x2, double y2) =>
     canvas.drawLine(Offset(x1, y1), Offset(x2, y2), paint);
@@ -1295,6 +1269,8 @@ abstract class LemonEngine extends StatelessWidget {
     required double srcHeight,
     double scale = 1.0,
     int? color,
+    double dstX = 0,
+    double dstY = 0,
   }) =>
       Container(
         alignment: Alignment.center,
@@ -1309,8 +1285,8 @@ abstract class LemonEngine extends StatelessWidget {
                   srcY: srcY,
                   srcWidth: srcWidth,
                   srcHeight: srcHeight,
-                  dstX: 0,
-                  dstY: 0,
+                  dstX: dstX,
+                  dstY: dstY,
                   scale: scale,
                   color: color ?? 1,
                   blendMode: color != null ? BlendMode.modulate : BlendMode.dstATop,
@@ -1341,7 +1317,6 @@ abstract class LemonEngine extends StatelessWidget {
   Widget build(BuildContext context) {
     print("engine.build()");
 
-
     if (!appInitialized){
       print('engine.initializing()');
       appInitialized = true;
@@ -1351,7 +1326,7 @@ abstract class LemonEngine extends StatelessWidget {
         theme: themeData.value,
         debugShowCheckedModeBanner: false,
         home: Scaffold(
-          body: loadingScreenBuilder(context),
+          body: buildLoadingPage(context),
         ),
       ));
 
