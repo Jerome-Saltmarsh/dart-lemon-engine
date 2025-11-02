@@ -1,8 +1,7 @@
 name: lemon_engine
 description: build games using flutter canvas
-version: 0.9.0
+version: 0.9.1
 homepage: https://github.com/Jerome-Saltmarsh/dart-lemon-engine
-publish_to: none
 
 environment:
   sdk: ^3.8.1
