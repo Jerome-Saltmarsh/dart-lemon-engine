@@ -4,10 +4,10 @@ import 'package:flutter/scheduler.dart';
 class CustomTicker extends StatefulWidget {
 
   final Widget? child;
-  final Function(Duration elapsed) onTrick;
+  final Function(Duration elapsed) onTick;
   final Function? onDispose;
 
-  const CustomTicker({super.key, required this.onTrick, this.child, this.onDispose});
+  const CustomTicker({super.key, required this.onTick, this.child, this.onDispose});
 
   @override
   _CustomTickerState createState() => _CustomTickerState();
@@ -19,7 +19,7 @@ class _CustomTickerState extends State<CustomTicker> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _ticker = createTicker(widget.onTrick);
+    _ticker = createTicker(widget.onTick);
     _ticker.start();
   }
 

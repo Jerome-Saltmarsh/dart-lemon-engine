@@ -1,10 +1,11 @@
 
 import 'package:flutter/material.dart';
-import 'package:lemon_engine/lemon_engine.dart';
+import 'package:lemon_engine/src.dart';
+
 
 class CustomCanvas extends StatelessWidget {
 
-  final PaintCanvas paint;
+  final DrawCanvas paint;
   final ValueNotifier<int>? frame;
 
   const CustomCanvas({
@@ -20,5 +21,5 @@ class CustomCanvas extends StatelessWidget {
           frame
       ),
     );
-
 }
+
